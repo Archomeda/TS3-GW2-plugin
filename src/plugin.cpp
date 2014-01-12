@@ -38,14 +38,6 @@ static uint64 infoDataId = 0;
 int threadStopRequested = 0;
 HANDLE hThread = 0;
 
-#define PLUGIN_API_VERSION 19
-
-#define PATH_BUFSIZE 512
-#define COMMAND_BUFSIZE 1024
-#define SERVERINFO_BUFSIZE 256
-#define CHANNELINFO_BUFSIZE 512
-#define RETURNCODE_BUFSIZE 128
-
 DWORD WINAPI mumbleLinkCheckLoop (LPVOID lpParam);
 
 
@@ -56,12 +48,12 @@ DWORD WINAPI mumbleLinkCheckLoop (LPVOID lpParam);
 
 /* Unique name identifying this plugin */
 const char* ts3plugin_name() {
-	return "Guild Wars 2 Plugin";
+	return PLUGIN_NAME;
 }
 
 /* Plugin version */
 const char* ts3plugin_version() {
-	return "0.1";
+	return PLUGIN_VERSION;
 }
 
 /* Plugin API version. Must be the same as the clients API major version, else the plugin fails to load. */
@@ -71,12 +63,12 @@ int ts3plugin_apiVersion() {
 
 /* Plugin author */
 const char* ts3plugin_author() {
-	return "Archomeda";
+	return PLUGIN_AUTHOR;
 }
 
 /* Plugin description */
 const char* ts3plugin_description() {
-	return "This plugin adds some Guild Wars 2 features to the TeamSpeak 3 client.";
+	return PLUGIN_DESCRIPTION;
 }
 
 /* Set TeamSpeak 3 callback functions */
