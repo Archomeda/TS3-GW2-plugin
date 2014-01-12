@@ -10,13 +10,10 @@
  * GNU General Public License for more details.
 */
 
-#pragma once
+#include "globals.h"
+#include "ts3_functions.h"
 
-#include <string>
-#include <vector>
-
-void split(const std::string &s, char delim, int limit, std::vector<std::string> &elems);
-void split(const std::string &s, char delim, std::vector<std::string> &elems);
-std::vector<std::string> split(const std::string &s, char delim, int limit);
-std::vector<std::string> split(const std::string &s, char delim);
-std::string to_string(int value);
+namespace Globals {
+	TS3Functions ts3Functions;
+	char* pluginID;
+}

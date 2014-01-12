@@ -10,7 +10,6 @@
  * GNU General Public License for more details.
 */
 
-#include <Windows.h>
 #include <cstdio>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,41 +20,31 @@
 #include "public_rare_definitions.h"
 #include "ts3_functions.h"
 #include "rapidjson/document.h"
+#include "commands.h"
 #include "plugin.h"
+#include "globals.h"
 #include "gw2_info.h"
 #include "mumblelink.h"
 #include "stringutils.h"
 using namespace std;
+using namespace Globals;
 
-static struct TS3Functions ts3Functions;
 GW2Info gw2Info;
-vector<GW2RemoteInfo> gw2RemoteInfos;
+GW2RemoteInfoContainer gw2RemoteInfoContainer;
 
 static PluginItemType infoDataType = (PluginItemType)0;
 static uint64 infoDataId = 0;
 
-static CRITICAL_SECTION cs;
 int threadStopRequested = 0;
 HANDLE hThread = 0;
-
-#define _strcpy(dest, destSize, src) strcpy_s(dest, destSize, src)
-#define snprintf sprintf_s
-#if _DEBUG
-#define debuglog(str, ...) printf(str, __VA_ARGS__);
-#else
-#define debuglog(str, ...)
-#endif
 
 #define PLUGIN_API_VERSION 19
 
 #define PATH_BUFSIZE 512
 #define COMMAND_BUFSIZE 1024
-#define INFODATA_BUFSIZE 1024
 #define SERVERINFO_BUFSIZE 256
 #define CHANNELINFO_BUFSIZE 512
 #define RETURNCODE_BUFSIZE 128
-
-static char* pluginID = NULL;
 
 DWORD WINAPI mumbleLinkCheckLoop (LPVOID lpParam);
 
@@ -103,8 +92,6 @@ int ts3plugin_init() {
 	/* Your plugin init code here */
 	debuglog("GW2Plugin: init\n");
 
-	InitializeCriticalSection(&cs);
-	
 	threadStopRequested = 0;
 	hThread = CreateThread(NULL, 0, mumbleLinkCheckLoop, NULL, 0, NULL);
 	if (hThread == 0) {
@@ -113,12 +100,12 @@ int ts3plugin_init() {
 	}
 
 	/* In case the plugin was activated after a connection with the server has been made */
-	uint64 serverConnectionHandlerID = ts3Functions.getCurrentServerConnectionHandlerID();
-	if (serverConnectionHandlerID != 0) {
-		debuglog("GW2Plugin: Already online, sending and requesting GW2 info\n");
-		sendGW2Info(serverConnectionHandlerID, PluginCommandTarget_SERVER, NULL);
-		requestGW2Info(serverConnectionHandlerID, PluginCommandTarget_SERVER, NULL);
-	}
+	//uint64 serverConnectionHandlerID = ts3Functions.getCurrentServerConnectionHandlerID();
+	//if (serverConnectionHandlerID != 0) {
+	//	debuglog("GW2Plugin: Already online, sending and requesting GW2 info\n");
+	//	sendGW2Info(serverConnectionHandlerID, PluginCommandTarget_SERVER, NULL);
+	//	requestGW2Info(serverConnectionHandlerID, PluginCommandTarget_SERVER, NULL);
+	//}
 
 	return 0;  /* 0 = success, 1 = failure, -2 = failure but client will not show a "failed to load" warning */
 	/* -2 is a very special case and should only be used if a plugin displays a dialog (e.g. overlay) asking the user to disable
@@ -159,14 +146,13 @@ void ts3plugin_shutdown() {
 		}
 	}
 
-	/* In case the plugin was deactivated without shutting down TeamSpeak */
+	/* In case the plugin was deactivated without shutting down TeamSpeak, we need to let the other clients know */
 	uint64 serverConnectionHandlerID = ts3Functions.getCurrentServerConnectionHandlerID();
 	if (serverConnectionHandlerID != 0) {
 		debuglog("GW2Plugin: Sending offline GW2 info message\n");
-		gw2Info.identity = "{}";
-		sendGW2Info(serverConnectionHandlerID, PluginCommandTarget_SERVER, NULL);
+		gw2Info.identity = "";
+		Commands::sendGW2Info(serverConnectionHandlerID, gw2Info, PluginCommandTarget_SERVER, NULL);
 	}
-	DeleteCriticalSection(&cs);
 
 	/*
 	 * Note:
@@ -207,7 +193,7 @@ int ts3plugin_offersConfigure() {
 void ts3plugin_registerPluginID(const char* id) {
 	const size_t sz = strlen(id) + 1;
 	pluginID = (char*)malloc(sz * sizeof(char));
-	_strcpy(pluginID, sz, id);  /* The id buffer will invalidate after exiting this function */
+	strcpy_s(pluginID, sz, id);  /* The id buffer will invalidate after exiting this function */
 	debuglog("GW2Plugin: registerPluginID: %s\n", pluginID);
 }
 
@@ -233,37 +219,27 @@ const char* ts3plugin_infoTitle() {
  * Check the parameter "type" if you want to implement this feature only for specific item types. Set the parameter
  * "data" to NULL to have the client ignore the info data.
  */
-void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 id, enum PluginItemType type, char** data) {
+void ts3plugin_infoData(uint64 serverConnectionHandlerID, uint64 clientID, enum PluginItemType type, char** data) {
 	/* Save this in case the right panel needs to be updated visually without having to reselect the client */
+	/* This also has a purpose of getting the last selected row and check if it's the same as the current one */
+	bool isNew = infoDataId != clientID;
 	infoDataType = type;
-	infoDataId = id;
+	infoDataId = clientID;
 
-	if (type == PLUGIN_CLIENT) {
-		int clientDataRow = -1;
-		debuglog("GW2Plugin: Client %d selected\n", id);
-		try {
-			if (getRowForClientGW2Data(serverConnectionHandlerID, (anyID)id, &clientDataRow) == 1) {
-				debuglog("\tFound record in gw2RemoteInfos[%d]\n", clientDataRow);
-				*data = (char*)malloc(INFODATA_BUFSIZE * sizeof(char));  /* Must be allocated in the plugin! */
-				if (!gw2RemoteInfos[clientDataRow].info.isOnline) {
-					snprintf(*data, INFODATA_BUFSIZE, "Currently offline");
-				} else {
-					// TODO: Get map and world names from GW2 api
-					snprintf(*data, INFODATA_BUFSIZE, "Playing as %s (%s) in %d (%d)",
-						gw2RemoteInfos[clientDataRow].info.characterName.c_str(),
-						MumbleLink::getProfessionName((MumbleLink::Profession)gw2RemoteInfos[clientDataRow].info.professionId).c_str(),
-						gw2RemoteInfos[clientDataRow].info.mapId,
-						gw2RemoteInfos[clientDataRow].info.worldId);
-				}
-			} else {
-				data = NULL;
-			}
-		} catch (int e) {
-			debuglog("GW2Plugin: Exception caught while trying to display info data: ", e);
+	try {
+		string result = gw2RemoteInfoContainer.getInfoData(serverConnectionHandlerID, (anyID)clientID, type);
+		if (result.length() > 0) {
+			*data = _strdup(result.c_str());
+		} else {
+			*data = NULL;
 		}
-	} else {
-		data = NULL;
+	} catch (int e) {
+		debuglog("GW2Plugin: Exception caught while trying to display info data: %d", e);
+		*data = NULL;
 	}
+
+	if (isNew && type == PLUGIN_CLIENT)
+		Commands::requestGW2Info(serverConnectionHandlerID, PluginCommandTarget_CLIENT, (anyID*)&clientID);
 }
 
 /* Required to release the memory for parameter "data" allocated in ts3plugin_infoData and ts3plugin_initMenus */
@@ -290,35 +266,21 @@ int ts3plugin_requestAutoload() {
 /* Clientlib */
 
 void ts3plugin_onConnectStatusChangeEvent(uint64 serverConnectionHandlerID, int newStatus, unsigned int errorNumber) {
-	/* Some example code following to show how to use the information query functions. */
-
 	switch (newStatus) {
 		case STATUS_DISCONNECTED: {
-			int removedRecords = 0;
-			debuglog("GW2Plugin: Disconnected; removing all previous received client data\n");
-			
-			EnterCriticalSection(&cs);
-			removeAllClientGW2DataRecords(serverConnectionHandlerID, &removedRecords);
-			LeaveCriticalSection(&cs);
-			
-			if (removedRecords) { debuglog("GW2Plugin: Removed %d record(s)\n", removedRecords); }
+			debuglog("GW2Plugin: Disconnected; removing all previous received client data\n");			
+			gw2RemoteInfoContainer.removeAllRemoteGW2InfoRecords(serverConnectionHandlerID);
 			break;
 		}
 		case STATUS_CONNECTION_ESTABLISHED:
 			debuglog("GW2Plugin: Connection with server %d established\n", serverConnectionHandlerID);
-			
-			sendGW2Info(serverConnectionHandlerID, PluginCommandTarget_SERVER, NULL);
-			requestGW2Info(serverConnectionHandlerID, PluginCommandTarget_SERVER, NULL);
 			break;
 	}
 }
 
 void ts3plugin_onClientKickFromServerEvent(uint64 serverConnectionHandlerID, anyID clientID, uint64 oldChannelID, uint64 newChannelID, int visibility, anyID kickerID, const char* kickerName, const char* kickerUniqueIdentifier, const char* kickMessage) {
 	debuglog("GW2Plugin: Client %d has been kicked from server, removing received data\n", clientID);
-
-	EnterCriticalSection(&cs);
-	removeClientGW2DataRecord(serverConnectionHandlerID, clientID);
-	LeaveCriticalSection(&cs);
+	gw2RemoteInfoContainer.removeRemoteGW2InfoRecord(serverConnectionHandlerID, clientID);
 }
 
 int ts3plugin_onServerErrorEvent(uint64 serverConnectionHandlerID, const char* errorMessage, unsigned int error, const char* returnCode, const char* extraMessage) {
@@ -334,173 +296,60 @@ int ts3plugin_onServerErrorEvent(uint64 serverConnectionHandlerID, const char* e
 }
 
 void ts3plugin_onServerStopEvent(uint64 serverConnectionHandlerID, const char* shutdownMessage) {
-	int removedRecords = 0;
 	debuglog("GW2Plugin: Server stopped; removing all previous received client data\n");
-	removeAllClientGW2DataRecords(serverConnectionHandlerID, &removedRecords);
-	if (removedRecords) { debuglog("GW2Plugin: Removed %d record(s)\n", removedRecords); }
+	gw2RemoteInfoContainer.removeAllRemoteGW2InfoRecords(serverConnectionHandlerID);
 }
 
 /* Clientlib rare */
 
 void ts3plugin_onPluginCommandEvent(uint64 serverConnectionHandlerID, const char* pluginName, const char* pluginCommand) {
-	enum { CMD_NONE = 0, CMD_GW2INFO, CMD_REQUESTGW2INFO } cmd = CMD_NONE;
-
 	debuglog("GW2Plugin: Received command '%s'\n", pluginCommand);
-	vector<string> s = split(string(pluginCommand), ' ', 2);
-	vector<string> params;
-	debuglog("\tCommand: %s\n\tParameters: %s\n", s.at(0).c_str(), s.at(1).c_str());
-	if (s.size() > 0) {
-		if (s.at(0) == "GW2Info") {
-			cmd = CMD_GW2INFO;
-			if (s.size() > 1)
-				params = split(s.at(1), ' ', 2);
-		} else if (s.at(0) == "RequestGW2Info") {
-			cmd = CMD_REQUESTGW2INFO;
-			if (s.size() > 1)
-				params.push_back(s.at(1));
-		}
-	}
 
-	switch(cmd) {
-		case CMD_NONE:
+	Commands::CommandType commandType;
+	vector<string> commandParameters;
+	Commands::parseCommand(pluginCommand, &commandType, &commandParameters);
+
+	switch(commandType) {
+		case Commands::CMD_NONE:
 			debuglog("\tUnknown command\n");
 			break;  /* Command not handled by plugin */
-		case CMD_GW2INFO: {
-			if (params.size() != 2) {
-				debuglog("\tInvalid parameter count: %d\n", params.size());
-				break;
-			}
-			debuglog("\tCommand: GW2Info\n\tClient: %s\n\tData: %s\n", params.at(0).c_str(), params.at(1).c_str());
-
-			anyID clientID = (int)atoi(params.at(0).c_str());
-			int existingRecord = -1;
-
-			EnterCriticalSection(&cs);
-			if (getRowForClientGW2Data(serverConnectionHandlerID, clientID, &existingRecord) == 1) {
-				rapidjson::Document identityDocument;
-				identityDocument.Parse<0>(params.at(1).c_str());
-				gw2RemoteInfos[existingRecord].info.identity = params.at(1).c_str();
-				if (!identityDocument.HasMember("name")) {
-					gw2RemoteInfos[existingRecord].info.isOnline = false;
-				} else {
-					gw2RemoteInfos[existingRecord].info.isOnline = true;
-					gw2RemoteInfos[existingRecord].info.characterName = identityDocument["name"].GetString();
-					gw2RemoteInfos[existingRecord].info.professionId = identityDocument["profession"].GetInt();
-					gw2RemoteInfos[existingRecord].info.mapId = identityDocument["map_id"].GetInt();
-					gw2RemoteInfos[existingRecord].info.worldId = identityDocument["world_id"].GetInt();
-					gw2RemoteInfos[existingRecord].info.teamColorId = identityDocument["team_color_id"].GetInt();
-					gw2RemoteInfos[existingRecord].info.commander = identityDocument["commander"].GetBool();
-				}
-				debuglog("\tUpdated existing record in gw2RemoteInfos[%d]\n", existingRecord);
+		case Commands::CMD_GW2INFO: {
+			GW2RemoteInfo gw2RemoteInfo;
+			gw2RemoteInfo.serverConnectionHandlerID = serverConnectionHandlerID;
+			gw2RemoteInfo.clientID = (int)atoi(commandParameters.at(0).c_str());
+			if (commandParameters.size() == 1) {
+				debuglog("\tCommand: GW2Info\n\tClient: %s\n\tData:\n", commandParameters.at(0).c_str());
+				gw2RemoteInfo.info.isOnline = false;
 			} else {
+				debuglog("\tCommand: GW2Info\n\tClient: %s\n\tData: %s\n", commandParameters.at(0).c_str(), commandParameters.at(1).c_str());
 				rapidjson::Document identityDocument;
-				identityDocument.Parse<0>(params.at(1).c_str());
-				GW2RemoteInfo gw2RemoteInfo;
-				gw2RemoteInfo.clientID = clientID;
-				gw2RemoteInfo.serverConnectionHandlerID = serverConnectionHandlerID;
-				gw2RemoteInfo.info.identity = params.at(1).c_str();
-				if (!identityDocument.HasMember("name")) {
-					gw2RemoteInfo.info.isOnline = false;
-				} else {
-					gw2RemoteInfo.info.isOnline = true;
-					gw2RemoteInfo.info.characterName = identityDocument["name"].GetString();
-					gw2RemoteInfo.info.professionId = identityDocument["profession"].GetInt();
-					gw2RemoteInfo.info.mapId = identityDocument["map_id"].GetInt();
-					gw2RemoteInfo.info.worldId = identityDocument["world_id"].GetInt();
-					gw2RemoteInfo.info.teamColorId = identityDocument["team_color_id"].GetInt();
-					gw2RemoteInfo.info.commander = identityDocument["commander"].GetBool();
-				}
-				gw2RemoteInfos.push_back(gw2RemoteInfo);
-				debuglog("\tAdded new record to gw2RemoteInfos\n");
+				identityDocument.Parse<0>(commandParameters.at(1).c_str());
+				gw2RemoteInfo.info.isOnline = true;
+				if (identityDocument.HasMember("name")) gw2RemoteInfo.info.characterName = identityDocument["name"].GetString();
+				if (identityDocument.HasMember("profession")) gw2RemoteInfo.info.professionId = identityDocument["profession"].GetInt();
+				if (identityDocument.HasMember("map_id")) gw2RemoteInfo.info.mapId = identityDocument["map_id"].GetInt();
+				if (identityDocument.HasMember("world_id")) gw2RemoteInfo.info.worldId = identityDocument["world_id"].GetInt();
+				if (identityDocument.HasMember("team_color_id")) gw2RemoteInfo.info.teamColorId = identityDocument["team_color_id"].GetInt();
+				if (identityDocument.HasMember("commander")) gw2RemoteInfo.info.commander = identityDocument["commander"].GetBool();
 			}
-			LeaveCriticalSection(&cs);
+			gw2RemoteInfoContainer.updateRemoteGW2Info(gw2RemoteInfo);
 
 			// Update right panel if active
 			if (infoDataType > 0 && infoDataId > 0) ts3Functions.requestInfoUpdate(serverConnectionHandlerID, infoDataType, infoDataId);
 			break;
 		}
-		case CMD_REQUESTGW2INFO: {
-			if (params.size() != 1) {
-				debuglog("\tInvalid parameter count: %d\n", params.size());
+		case Commands::CMD_REQUESTGW2INFO: {
+			if (commandParameters.size() != 1) {
+				debuglog("\tInvalid parameter count: %d\n", commandParameters.size());
 				break;
 			}
-			debuglog("\tCommand: RequestGW2Info\n\tClient: %s\n", params.at(0).c_str());
+			debuglog("\tCommand: RequestGW2Info\n\tClient: %s\n", commandParameters.at(0).c_str());
 
-			anyID clientID = (int)atoi(params.at(0).c_str());
-			sendGW2Info(serverConnectionHandlerID, PluginCommandTarget_CLIENT, &clientID);
+			anyID clientID = (int)atoi(commandParameters.at(0).c_str());
+			Commands::sendGW2Info(serverConnectionHandlerID, gw2Info, PluginCommandTarget_CLIENT, &clientID);
 			break;
 		}
 	}
-}
-
-
-int getRowForClientGW2Data(uint64 serverConnectionHandlerID, anyID clientID, int* result) {
-	unsigned int i = 0;
-	while (i < gw2RemoteInfos.size()) {
-		GW2RemoteInfo currentRow = gw2RemoteInfos.at(i);
-		if (currentRow.clientID == clientID && currentRow.serverConnectionHandlerID == serverConnectionHandlerID) {
-			debuglog("GW2Plugin: Found existing character data in row %d\n", i);
-			debuglog("\tclientID: %d\tserverHandlerID: %d\n", clientID, serverConnectionHandlerID);
-			*result = i;
-			return 1;
-		}
-		i++;
-	}
-
-	return 0;
-}
-
-int removeClientGW2DataRecord(uint64 serverConnectionHandlerID, anyID clientID) {
-	int existingRecord = -1;
-	if (getRowForClientGW2Data(serverConnectionHandlerID, clientID, &existingRecord) == 1) {
-		gw2RemoteInfos.erase(gw2RemoteInfos.begin() + existingRecord);
-		return 1;
-	}
-	return 0;
-}
-
-void removeAllClientGW2DataRecords(uint64 serverConnectionHandlerID, int* removedRecords) {
-	unsigned int i = 0;
-	while (i < gw2RemoteInfos.size()) {
-		if (gw2RemoteInfos[i].serverConnectionHandlerID == serverConnectionHandlerID
-			&& removeClientGW2DataRecord(serverConnectionHandlerID, gw2RemoteInfos[i].clientID) == 1) {
-				*removedRecords++;
-		} else {
-			i++;
-		}
-	}
-}
-
-void requestGW2Info(uint64 serverConnectionHandlerID, int targetMode, anyID* targetIDs) {
-	anyID myID;
-	if (!pluginID) {
-		debuglog("GW2Plugin: Plugin not registered, unable to broadcast Guild Wars 2 info\n");
-		return;
-	}
-	if (ts3Functions.getClientID(serverConnectionHandlerID, &myID) != ERROR_ok) {
-		debuglog("GW2Plugin: Failed to get own ID\n");
-		return;
-	}
-
-	char command[COMMAND_BUFSIZE];
-	snprintf(command, sizeof(command), "RequestGW2Info %d", myID);
-	ts3Functions.sendPluginCommand(serverConnectionHandlerID, pluginID, command, PluginCommandTarget_SERVER, targetIDs, NULL);
-}
-
-void sendGW2Info(uint64 serverConnectionHandlerID, int targetMode, anyID* targetIDs) {
-	anyID myID;
-	if (!pluginID) {
-		debuglog("GW2Plugin: Plugin not registered, unable to broadcast Guild Wars 2 info\n");
-		return;
-	}
-	if (ts3Functions.getClientID(serverConnectionHandlerID, &myID) != ERROR_ok) {
-		debuglog("GW2Plugin: Failed to get own ID\n");
-		return;
-	}
-
-	char command[COMMAND_BUFSIZE];
-	snprintf(command, sizeof(command), "GW2Info %d %s", myID, gw2Info.identity.c_str());
-	ts3Functions.sendPluginCommand(serverConnectionHandlerID, pluginID, command, PluginCommandTarget_SERVER, targetIDs, NULL);
 }
 
 
@@ -527,7 +376,7 @@ DWORD WINAPI mumbleLinkCheckLoop (LPVOID lpParam) {
 				debuglog("GW2Plugin: Guild Wars 2 linked\n");
 			} else {
 				debuglog("GW2Plugin: Guild Wars 2 unlinked\n");
-				gw2Info.identity = "{}";
+				gw2Info.identity = "";
 			}
 			gw2Info.isOnline = newIsOnline;
 			updated = true;
@@ -542,7 +391,7 @@ DWORD WINAPI mumbleLinkCheckLoop (LPVOID lpParam) {
 		}
 
 		if (updated)
-			sendGW2Info(ts3Functions.getCurrentServerConnectionHandlerID(), PluginCommandTarget_SERVER, NULL);
+			Commands::sendGW2Info(ts3Functions.getCurrentServerConnectionHandlerID(), gw2Info, PluginCommandTarget_SERVER, NULL);
 
 		Sleep(200);
 	}

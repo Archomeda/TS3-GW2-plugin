@@ -161,11 +161,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="commands.cpp" />
+    <ClCompile Include="globals.cpp" />
+    <ClCompile Include="gw2_info.cpp" />
     <ClCompile Include="mumblelink.cpp" />
     <ClCompile Include="plugin.cpp" />
     <ClCompile Include="stringutils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="commands.h" />
+    <ClInclude Include="globals.h" />
     <ClInclude Include="gw2_info.h" />
     <ClInclude Include="mumblelink.h" />
     <ClInclude Include="plugin.h" />

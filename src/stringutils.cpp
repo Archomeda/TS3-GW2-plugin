@@ -48,3 +48,7 @@ vector<string> split(const string &s, char delim, int limit) {
 vector<string> split(const string &s, char delim) {
 	return split(s, delim, 0);
 }
+
+string to_string(int value) {
+	return to_string((long long)value);
+}

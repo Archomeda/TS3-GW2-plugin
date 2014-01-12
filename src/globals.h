@@ -12,11 +12,9 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
+#include "ts3_functions.h"
 
-void split(const std::string &s, char delim, int limit, std::vector<std::string> &elems);
-void split(const std::string &s, char delim, std::vector<std::string> &elems);
-std::vector<std::string> split(const std::string &s, char delim, int limit);
-std::vector<std::string> split(const std::string &s, char delim);
-std::string to_string(int value);
+namespace Globals {
+	extern TS3Functions ts3Functions;
+	extern char* pluginID;
+}

@@ -10,8 +10,9 @@
  * GNU General Public License for more details.
 */
 
-#ifndef PLUGIN_H
-#define PLUGIN_H
+#pragma once
+
+#include "ts3_functions.h"
 
 #ifdef WIN32
 #define PLUGINS_EXPORTDLL __declspec(dllexport)
@@ -147,13 +148,4 @@ PLUGINS_EXPORTDLL void ts3plugin_onPluginCommandEvent(uint64 serverConnectionHan
 
 #ifdef __cplusplus
 }
-#endif
-
-int getRowForClientGW2Data(uint64 serverConnectionHandlerID, anyID clientID, int* result);
-int removeClientGW2DataRecord(uint64 serverConnectionHandlerID, anyID clientID);
-void removeAllClientGW2DataRecords(uint64 serverConnectionHandlerID, int* removedRecords);
-
-void requestGW2Info(uint64 serverConnectionHandlerID, int targetMode, anyID* targetIDs);
-void sendGW2Info(uint64 serverConnectionHandlerID, int targetMode, anyID* targetIDs);
-
 #endif

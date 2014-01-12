@@ -10,11 +10,11 @@
  * GNU General Public License for more details.
 */
 
-#ifndef MUMBLELINK_H
-#define MUMBLELINK_H
+#pragma once
 
 #include <stdint.h>
 #include <string>
+#include <Windows.h>
 
 namespace MumbleLink {
 
@@ -64,5 +64,3 @@ namespace MumbleLink {
 
 	std::string getProfessionName(Profession profession);
 }
-
-#endif
