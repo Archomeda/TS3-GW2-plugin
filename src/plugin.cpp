@@ -35,7 +35,7 @@ GW2RemoteInfoContainer gw2RemoteInfoContainer;
 static PluginItemType infoDataType = (PluginItemType)0;
 static uint64 infoDataId = 0;
 
-int threadStopRequested = 0;
+bool threadStopRequested = false;
 HANDLE hThread = 0;
 
 DWORD WINAPI mumbleLinkCheckLoop (LPVOID lpParam);
@@ -84,7 +84,7 @@ int ts3plugin_init() {
 	/* Your plugin init code here */
 	debuglog("GW2Plugin: init\n");
 
-	threadStopRequested = 0;
+	threadStopRequested = false;
 	hThread = CreateThread(NULL, 0, mumbleLinkCheckLoop, NULL, 0, NULL);
 	if (hThread == 0) {
 		debuglog("\tCould not create thread to check for Guild Wars 2 updates through Mumble Link: %d\n", GetLastError());
@@ -112,7 +112,7 @@ void ts3plugin_shutdown() {
 
 	if (hThread != 0) {
 		bool threadClosed = false;
-		threadStopRequested = 1;
+		threadStopRequested = true;
 		DWORD threadReturn = WaitForSingleObject(hThread, 1000);
 		switch (threadReturn) {
 			case WAIT_ABANDONED:
