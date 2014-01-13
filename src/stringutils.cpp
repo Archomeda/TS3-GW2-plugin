@@ -16,11 +16,11 @@
 #include <stdint.h>
 using namespace std;
 
-void split(const string &s, char delim, uint32_t limit, vector<string> &elems) {
-	uint32_t pos = 0;
-	uint32_t i = 0;
+void split(const string &s, char delim, size_t limit, vector<string> &elems) {
+	size_t pos = 0;
+	size_t i = 0;
 	while (pos < s.length()) {
-		int endPos = s.find(delim, pos);
+		size_t endPos = s.find(delim, pos);
 
 		if (endPos < 0 || i + 1 >= limit) {
 			string item = s.substr(pos, s.length() - pos);
