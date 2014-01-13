@@ -5,18 +5,10 @@ This is a plugin that allows TeamSpeak to show some additional information about
 In order to get information about someone else on the TeamSpeak server, that person has to install this plugin as well. The information is visible in the right panel of the TeamSpeak client (where the information of a channel or client is found when selected).
 
 
-Current features
+Features
 ----------------
-- View character name
-- View profession
-- View current map (currently raw id only)
-- View current world (currently raw id only)
-
-
-Planned features
-----------------
-- Using Guild Wars 2 API to get map and world names to replace the raw ids
-- Cleaning up code that may bring some optimizations 
+- View character name and profession
+- View current map, region and world name
 
 
 Requirements
@@ -28,7 +20,7 @@ Requirements
 
 Compiling notes
 ---------------
-Compiling of this plugin has been tested in Visual Studio 2010 only. Newer versions should work, but it is not guaranteed that it will. Older versions will most likely not work though.
+Compilation of this plugin has been tested in Visual Studio 2010 only. Newer versions should work, but it is not guaranteed that it will. Older versions will most likely not work though.
 
 Inside the include folder you can find a couple of third party header files: the TeamSpeak 3 Client Plugin SDK and [rapidjson](http://code.google.com/p/rapidjson/).
 
