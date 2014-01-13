@@ -89,7 +89,7 @@ namespace Commands {
 		if (!getOwnClientID(serverConnectionHandlerID, &myID))
 			return;
 
-		string parameters = to_string(myID) + " " + gw2Info.identity.c_str();
+		string parameters = to_string(myID) + " " + gw2Info.jsonData.c_str();
 		send(serverConnectionHandlerID, CMD_GW2INFO, parameters, PluginCommandTarget_SERVER, targetIDs, NULL);
 	}
 

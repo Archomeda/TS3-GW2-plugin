@@ -20,6 +20,8 @@
 #include "public_rare_definitions.h"
 #include "ts3_functions.h"
 #include "rapidjson/document.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
 #include "commands.h"
 #include "plugin.h"
 #include "globals.h"
@@ -142,7 +144,7 @@ void ts3plugin_shutdown() {
 	uint64 serverConnectionHandlerID = ts3Functions.getCurrentServerConnectionHandlerID();
 	if (serverConnectionHandlerID != 0) {
 		debuglog("GW2Plugin: Sending offline GW2 info message\n");
-		gw2Info.identity = "";
+		gw2Info.jsonData = "";
 		Commands::sendGW2Info(serverConnectionHandlerID, gw2Info, PluginCommandTarget_SERVER, NULL);
 	}
 
@@ -314,20 +316,22 @@ void ts3plugin_onPluginCommandEvent(uint64 serverConnectionHandlerID, const char
 				gw2RemoteInfo.info.isOnline = false;
 			} else {
 				debuglog("\tCommand: GW2Info\n\tClient: %s\n\tData: %s\n", commandParameters.at(0).c_str(), commandParameters.at(1).c_str());
-				rapidjson::Document identityDocument;
-				identityDocument.Parse<0>(commandParameters.at(1).c_str());
+				rapidjson::Document json;
+				json.Parse<0>(commandParameters.at(1).c_str());
 				gw2RemoteInfo.info.isOnline = true;
-				if (identityDocument.HasMember("name")) gw2RemoteInfo.info.characterName = identityDocument["name"].GetString();
-				if (identityDocument.HasMember("profession")) gw2RemoteInfo.info.professionId = identityDocument["profession"].GetInt();
-				if (identityDocument.HasMember("map_id")) gw2RemoteInfo.info.mapId = identityDocument["map_id"].GetInt();
-				if (identityDocument.HasMember("world_id")) gw2RemoteInfo.info.worldId = identityDocument["world_id"].GetInt();
-				if (identityDocument.HasMember("team_color_id")) gw2RemoteInfo.info.teamColorId = identityDocument["team_color_id"].GetInt();
-				if (identityDocument.HasMember("commander")) gw2RemoteInfo.info.commander = identityDocument["commander"].GetBool();
+				if (json.HasMember("name")) gw2RemoteInfo.info.characterName = json["name"].GetString();
+				if (json.HasMember("profession")) gw2RemoteInfo.info.professionId = json["profession"].GetInt();
+				if (json.HasMember("map_id")) gw2RemoteInfo.info.mapId = json["map_id"].GetUint();
+				if (json.HasMember("map_name")) gw2RemoteInfo.info.mapName = json["map_name"].GetString();
+				if (json.HasMember("region_id")) gw2RemoteInfo.info.regionId = json["region_id"].GetUint();
+				if (json.HasMember("region_name")) gw2RemoteInfo.info.regionName = json["region_name"].GetString();
+				if (json.HasMember("world_id")) gw2RemoteInfo.info.worldId = json["world_id"].GetUint();
+				if (json.HasMember("world_name")) gw2RemoteInfo.info.worldName = json["world_name"].GetString();
+				if (json.HasMember("team_color_id")) gw2RemoteInfo.info.teamColorId = json["team_color_id"].GetInt();
+				if (json.HasMember("commander")) gw2RemoteInfo.info.commander = json["commander"].GetBool();
 			}
 			gw2RemoteInfoContainer.updateRemoteGW2Info(gw2RemoteInfo);
-
-			// Update right panel if active
-			if (infoDataType > 0 && infoDataId > 0) ts3Functions.requestInfoUpdate(serverConnectionHandlerID, infoDataType, infoDataId);
+			updateInfoPanel();
 			break;
 		}
 		case Commands::CMD_REQUESTGW2INFO: {
@@ -342,6 +346,10 @@ void ts3plugin_onPluginCommandEvent(uint64 serverConnectionHandlerID, const char
 			break;
 		}
 	}
+}
+
+void updateInfoPanel() {
+	if (infoDataType > 0 && infoDataId > 0) ts3Functions.requestInfoUpdate(ts3Functions.getCurrentServerConnectionHandlerID(), infoDataType, infoDataId);
 }
 
 
@@ -368,6 +376,7 @@ DWORD WINAPI mumbleLinkCheckLoop (LPVOID lpParam) {
 				debuglog("GW2Plugin: Guild Wars 2 linked\n");
 			} else {
 				debuglog("GW2Plugin: Guild Wars 2 unlinked\n");
+				gw2Info.jsonData = "";
 				gw2Info.identity = "";
 			}
 			gw2Info.isOnline = newIsOnline;
@@ -376,8 +385,33 @@ DWORD WINAPI mumbleLinkCheckLoop (LPVOID lpParam) {
 
 		if (gw2Info.isOnline) {
 			if (gw2Info.identity != newIdentity) {
-				debuglog("GW2Plugin: New Guild Wars 2 identity: %s\n", newIdentity.c_str());
 				gw2Info.identity = newIdentity;
+				gw2Info.isOnline = true;
+				rapidjson::Document json;
+				json.Parse<0>(newIdentity.c_str());
+				if (json.HasMember("name")) gw2Info.characterName = json["name"].GetString();
+				if (json.HasMember("profession")) gw2Info.professionId = json["profession"].GetInt();
+				if (json.HasMember("map_id")) gw2Info.mapId = json["map_id"].GetUint();
+				if (json.HasMember("world_id")) gw2Info.worldId = json["world_id"].GetUint();
+				if (json.HasMember("team_color_id")) gw2Info.teamColorId = json["team_color_id"].GetInt();
+				if (json.HasMember("commander")) gw2Info.commander = json["commander"].GetBool();
+				GW2CacheData::MapData mapData;
+				GW2CacheData::getMapData(gw2Info.mapId, &mapData);
+				gw2Info.mapName = mapData.mapName;
+				gw2Info.regionId = mapData.regionID;
+				gw2Info.regionName = mapData.regionName;
+				GW2CacheData::getWorldName(gw2Info.worldId, &gw2Info.worldName);
+				json.AddMember("map_name", gw2Info.mapName.c_str(), json.GetAllocator());
+				json.AddMember("world_name", gw2Info.worldName.c_str(), json.GetAllocator());
+				json.AddMember("region_id", gw2Info.regionId, json.GetAllocator());
+				json.AddMember("region_name", gw2Info.regionName.c_str(), json.GetAllocator());
+
+				rapidjson::StringBuffer buffer;
+				rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+				json.Accept(writer);
+				gw2Info.jsonData = buffer.GetString();
+
+				debuglog("GW2Plugin: Got new Guild Wars 2 data: %s\n", gw2Info.jsonData.c_str());
 				updated = true;
 			}
 		}

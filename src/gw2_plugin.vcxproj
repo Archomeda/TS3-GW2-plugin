@@ -94,6 +94,7 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalDependencies>Wininet.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -137,6 +138,7 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalDependencies>Wininet.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -164,6 +166,7 @@
     <ClCompile Include="commands.cpp" />
     <ClCompile Include="globals.cpp" />
     <ClCompile Include="gw2_info.cpp" />
+    <ClCompile Include="http.cpp" />
     <ClCompile Include="mumblelink.cpp" />
     <ClCompile Include="plugin.cpp" />
     <ClCompile Include="stringutils.cpp" />
@@ -172,6 +175,7 @@
     <ClInclude Include="commands.h" />
     <ClInclude Include="globals.h" />
     <ClInclude Include="gw2_info.h" />
+    <ClInclude Include="http.h" />
     <ClInclude Include="mumblelink.h" />
     <ClInclude Include="plugin.h" />
     <ClInclude Include="stringutils.h" />

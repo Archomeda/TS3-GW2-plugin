@@ -12,18 +12,113 @@
 
 #include <vector>
 #include "plugin_definitions.h"
+#include "rapidjson/document.h"
 #include "gw2_info.h"
+#include "http.h"
 #include "mumblelink.h"
 #include "stringutils.h"
 #include "ts3_functions.h"
 using namespace std;
 
+#define GW2APIURL_MAP "https://api.guildwars2.com/v1/maps.json?map_id=%d"
+#define GW2APIURL_WORLDS "https://api.guildwars2.com/v1/world_names.json"
 
-GW2RemoteInfoContainer::GW2RemoteInfoContainer(void) {
+
+namespace GW2CacheData {
+
+	std::map<int, MapData> mapData;
+	std::map<int, std::string> worldData;
+
+	bool getMapData(int mapID, MapData* data) {
+		if (mapData.find(mapID) != mapData.end()) {
+			*data = mapData.at(mapID);
+			debuglog("GW2Plugin: Got cached data of map %d: %s - %s\n", mapID, data->regionName.c_str(), data->mapName.c_str());
+			return true;
+		}
+	
+		char urlBuffer[64];
+		sprintf_s(urlBuffer, GW2APIURL_MAP, mapID);
+		string result;
+		try {
+			if (getFromHttpUrl(urlBuffer, &result, NULL)) {
+				debuglog("GW2Plugin: Downloaded data from %s\n", urlBuffer);
+				rapidjson::Document json;
+				json.Parse<0>(result.c_str());
+				if (json.HasMember("maps")) {
+					const rapidjson::Value& jsonMaps = json["maps"];
+					if (jsonMaps.HasMember(to_string(mapID).c_str())) {
+						const rapidjson::Value& jsonMap = jsonMaps[to_string(mapID).c_str()];
+						if (jsonMap.HasMember("map_name")) data->mapName = jsonMap["map_name"].GetString();
+						if (jsonMap.HasMember("region_id")) data->regionID = jsonMap["region_id"].GetUint();
+						if (jsonMap.HasMember("region_name")) data->regionName = jsonMap["region_name"].GetString();
+						if (!data->mapName.empty()) {
+							mapData.insert(pair<int, MapData>(mapID, *data));
+							debuglog("GW2Plugin: Downloaded data of map %d: %s - %s\n", mapID, data->regionName.c_str(), data->mapName.c_str());
+							return true;
+						}
+					}
+				}
+			}
+		} catch(int e) {
+			debuglog("GW2Plugin: Error while getting map %d: %d", mapID, e);
+		}
+
+		debuglog("GW2Plugin: Map %d unknown\n", mapID);
+		data->mapName = "Map " + to_string(mapID);
+		data->regionName = "Region " + to_string(data->regionID);
+		return false;
+	}
+
+	bool getWorldName(int worldID, string* worldName) {
+		if (worldData.find(worldID) != worldData.end()) {
+			*worldName = worldData.at(worldID);
+			debuglog("GW2Plugin: Got cached name of world %d: %s\n", worldID, (*worldName).c_str());
+			return true;
+		}
+	
+		string result;
+		bool found = false;
+		try {
+			if (getFromHttpUrl(GW2APIURL_WORLDS, &result, NULL)) {
+				debuglog("GW2Plugin: Downloaded data from %s\n", GW2APIURL_WORLDS);
+				rapidjson::Document json;
+				json.Parse<0>(result.c_str());
+				if (json.IsArray()) {
+					for (rapidjson::SizeType i = 0; i < json.Size(); i++) {
+						if (json[i].HasMember("id") && json[i].HasMember("name")) {
+							int id = (int)atoi(json[i]["id"].GetString());
+							string name = json[i]["name"].GetString();
+							if (worldData.find(id) == worldData.end()) {
+								worldData.insert(pair<int, string>(id, name));
+								debuglog("GW2Plugin: Downloaded name of world %d: %s\n", id, name.c_str());
+							}
+							if (id == worldID) {
+								found = true;
+								*worldName = name;
+							}
+						}
+					}
+				}
+			}
+		} catch(int e) {
+			debuglog("GW2Plugin: Error while getting world %d: %d", worldID, e);
+		}
+
+		if (!found) {
+			debuglog("GW2Plugin: World %d unknown\n", worldID);
+			*worldName = "World " + to_string(worldID);
+		}
+		return found;
+	}
+
+}
+
+
+GW2RemoteInfoContainer::GW2RemoteInfoContainer() {
 	InitializeCriticalSection(&cs);
 }
 
-GW2RemoteInfoContainer::~GW2RemoteInfoContainer(void) {
+GW2RemoteInfoContainer::~GW2RemoteInfoContainer() {
 	DeleteCriticalSection(&cs);
 }
 
@@ -41,11 +136,9 @@ bool GW2RemoteInfoContainer::getInfoData(uint64 serverConnectionHandlerID, anyID
 			if (!gw2RemoteInfo.info.isOnline) {
 				*data = "Currently offline";
 			} else {
-				// TODO: Get map and world names from GW2 api
-				*data =  "Playing as " + gw2RemoteInfo.info.characterName +
-					" (" + MumbleLink::getProfessionName((MumbleLink::Profession)gw2RemoteInfo.info.professionId) + ")" +
-					" in " + to_string(gw2RemoteInfo.info.mapId) +
-					" (" + to_string(gw2RemoteInfo.info.worldId) + ")";
+				*data = "Playing as " + gw2RemoteInfo.info.characterName +
+					" (" + MumbleLink::getProfessionName((MumbleLink::Profession)gw2RemoteInfo.info.professionId) + ")\n" +
+					gw2RemoteInfo.info.regionName + " - " + gw2RemoteInfo.info.mapName + " (" + gw2RemoteInfo.info.worldName + ")";
 			}
 			return true;
 		} else {

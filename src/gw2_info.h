@@ -12,7 +12,9 @@
 
 #pragma once
 
+#include <map>
 #include <stdio.h>
+#include <stdint.h>
 #include <string>
 #include <vector>
 #include <Windows.h>
@@ -24,13 +26,19 @@
 #define debuglog(str, ...)
 #endif
 
+
 struct GW2Info {
 	bool isOnline;
 	std::string identity;
+	std::string jsonData;
 	std::string characterName;
 	int professionId;
 	int mapId;
+	std::string mapName;
+	int regionId;
+	std::string regionName;
 	int worldId;
+	std::string worldName;
 	int teamColorId;
 	bool commander;
 };
@@ -40,6 +48,21 @@ struct GW2RemoteInfo {
 	uint64 serverConnectionHandlerID;
 	GW2Info info;
 };
+
+
+namespace GW2CacheData {
+
+	struct MapData {
+		int mapID;
+		std::string mapName;
+		int regionID;
+		std::string regionName;
+	};
+
+	bool getMapData(int mapID, MapData* data);
+	bool getWorldName(int worldID, std::string* worldName);
+
+}
 
 
 class GW2RemoteInfoContainer {

@@ -149,3 +149,5 @@ PLUGINS_EXPORTDLL void ts3plugin_onPluginCommandEvent(uint64 serverConnectionHan
 #ifdef __cplusplus
 }
 #endif
+
+void updateInfoPanel();
