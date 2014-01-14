@@ -13,6 +13,7 @@
 #include <cstdio>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <vector>
 #include "public_errors.h"
 #include "public_errors_rare.h"
@@ -28,6 +29,7 @@
 #include "gw2_info.h"
 #include "mumblelink.h"
 #include "stringutils.h"
+#include "updatechecker.h"
 using namespace std;
 using namespace Globals;
 
@@ -37,10 +39,12 @@ GW2RemoteInfoContainer gw2RemoteInfoContainer;
 static PluginItemType infoDataType = (PluginItemType)0;
 static uint64 infoDataId = 0;
 
+time_t lastUpdateCheck = 0;
 bool threadStopRequested = false;
 HANDLE hThread = 0;
 
-DWORD WINAPI mumbleLinkCheckLoop (LPVOID lpParam);
+DWORD WINAPI checkForUpdatesAsync(LPVOID lpParam);
+DWORD WINAPI mumbleLinkCheckLoop(LPVOID lpParam);
 
 
 /*********************************** Required functions ************************************/
@@ -94,12 +98,11 @@ int ts3plugin_init() {
 	}
 
 	/* In case the plugin was activated after a connection with the server has been made */
-	//uint64 serverConnectionHandlerID = ts3Functions.getCurrentServerConnectionHandlerID();
-	//if (serverConnectionHandlerID != 0) {
-	//	debuglog("GW2Plugin: Already online, sending and requesting GW2 info\n");
-	//	sendGW2Info(serverConnectionHandlerID, PluginCommandTarget_SERVER, NULL);
-	//	requestGW2Info(serverConnectionHandlerID, PluginCommandTarget_SERVER, NULL);
-	//}
+	uint64 serverConnectionHandlerID = ts3Functions.getCurrentServerConnectionHandlerID();
+	if (serverConnectionHandlerID != 0) {
+		debuglog("GW2Plugin: Already online, checking for updates\n");
+		checkForUpdates();
+	}
 
 	return 0;  /* 0 = success, 1 = failure, -2 = failure but client will not show a "failed to load" warning */
 	/* -2 is a very special case and should only be used if a plugin displays a dialog (e.g. overlay) asking the user to disable
@@ -268,6 +271,7 @@ void ts3plugin_onConnectStatusChangeEvent(uint64 serverConnectionHandlerID, int 
 		}
 		case STATUS_CONNECTION_ESTABLISHED:
 			debuglog("GW2Plugin: Connection with server %d established\n", serverConnectionHandlerID);
+			checkForUpdates();
 			break;
 	}
 }
@@ -352,8 +356,33 @@ void updateInfoPanel() {
 	if (infoDataType > 0 && infoDataId > 0) ts3Functions.requestInfoUpdate(ts3Functions.getCurrentServerConnectionHandlerID(), infoDataType, infoDataId);
 }
 
+bool checkForUpdates() {
+#ifndef _DEBUG
+	HANDLE hThread = CreateThread(NULL, 0, checkForUpdatesAsync, NULL, 0, NULL);
+	return hThread != 0;
+#endif
+}
 
-DWORD WINAPI mumbleLinkCheckLoop (LPVOID lpParam) {
+DWORD WINAPI checkForUpdatesAsync(LPVOID lpParam) {
+	try {
+		if (difftime(time(NULL), lastUpdateCheck) >= 3600) {
+			Version newVersion;
+			string url;
+			if (checkForUpdate(true, &newVersion, &url)) {
+				string updateMessage = "[color=blue]Guild Wars 2 plugin version " + newVersion.getVersionString() + " is now available.[/color] " + 
+					"[url=" + url + "]Click here to download.[/url]";
+				ts3Functions.printMessageToCurrentTab(updateMessage.c_str());
+			}
+			lastUpdateCheck = time(NULL);
+		}
+	} catch (...) {
+		ts3Functions.printMessageToCurrentTab("Error while checking for Guild Wars 2 plugin updates.");
+	}
+	return 0;
+}
+
+
+DWORD WINAPI mumbleLinkCheckLoop(LPVOID lpParam) {
 	MumbleLink::initLink();
 	debuglog("GW2Plugin: Mumble Link created\n");
 

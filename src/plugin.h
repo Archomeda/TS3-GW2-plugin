@@ -150,4 +150,5 @@ PLUGINS_EXPORTDLL void ts3plugin_onPluginCommandEvent(uint64 serverConnectionHan
 }
 #endif
 
+bool checkForUpdates();
 void updateInfoPanel();

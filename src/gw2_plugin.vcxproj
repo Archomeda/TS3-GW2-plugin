@@ -172,6 +172,7 @@
     <ClCompile Include="mumblelink.cpp" />
     <ClCompile Include="plugin.cpp" />
     <ClCompile Include="stringutils.cpp" />
+    <ClCompile Include="updatechecker.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="commands.h" />
@@ -181,6 +182,7 @@
     <ClInclude Include="mumblelink.h" />
     <ClInclude Include="plugin.h" />
     <ClInclude Include="stringutils.h" />
+    <ClInclude Include="updatechecker.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
