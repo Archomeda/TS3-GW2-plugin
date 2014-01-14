@@ -31,10 +31,10 @@ namespace Commands {
 		CMD_REQUESTGW2INFO
 	};
 
-	bool parseCommand(std::string command, CommandType* commandType, std::vector<std::string>* commandParameters);
+	bool parseCommand(const std::string& command, CommandType& commandType, std::vector<std::string>& commandParameters);
 
-	void send(uint64 serverConnectionHandlerID, CommandType type, std::string parameters, PluginTargetMode targetMode, const anyID* targetIDs, const char* returnCode);
+	void send(uint64 serverConnectionHandlerID, CommandType type, const std::string& parameters, int targetMode, const anyID* targetIDs, const char* returnCode);
 	void requestGW2Info(uint64 serverConnectionHandlerID, int targetMode, const anyID* targetIDs);
-	void sendGW2Info(uint64 serverConnectionHandlerID, GW2Info gw2Info, int targetMode, const anyID* targetIDs);
+	void sendGW2Info(uint64 serverConnectionHandlerID, const GW2Info& gw2Info, int targetMode, const anyID* targetIDs);
 
 }

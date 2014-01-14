@@ -14,4 +14,4 @@
 
 #include <string>
 
-bool getFromHttpUrl(std::string url, std::string* result, long unsigned* lastError);
+bool getFromHttpUrl(const std::string& url, std::string* result, long unsigned* lastError);

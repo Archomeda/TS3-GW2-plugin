@@ -38,28 +38,28 @@ namespace Commands {
 		return true;
 	}
 
-	bool parseCommand(string command, CommandType* commandType, vector<string>* commandParameters) {
-		*commandType = CMD_NONE;
+	bool parseCommand(const string& command, CommandType& commandType, vector<string>& commandParameters) {
+		commandType = CMD_NONE;
 		vector<string> s = split(string(command), ' ', 2);
 		vector<string> params;
 		if (s.size() > 0) {
 			if (s.at(0) == "GW2Info") {
-				*commandType = CMD_GW2INFO;
+				commandType = CMD_GW2INFO;
 				if (s.size() > 1)
 					params = split(s.at(1), ' ', 2);
 			} else if (s.at(0) == "RequestGW2Info") {
-				*commandType = CMD_REQUESTGW2INFO;
+				commandType = CMD_REQUESTGW2INFO;
 				if (s.size() > 1)
 					params.push_back(s.at(1));
 			} else {
 				return false;
 			}
 		}
-		*commandParameters = params;
+		commandParameters = params;
 		return true;
 	}
 
-	void send(uint64 serverConnectionHandlerID, CommandType type, string parameters, PluginTargetMode targetMode, const anyID* targetIDs, const char* returnCode) {
+	void send(uint64 serverConnectionHandlerID, CommandType type, const string& parameters, int targetMode, const anyID* targetIDs, const char* returnCode) {
 		string command;
 
 		switch (type) {
@@ -84,7 +84,7 @@ namespace Commands {
 		send(serverConnectionHandlerID, CMD_REQUESTGW2INFO, parameters, PluginCommandTarget_SERVER, targetIDs, NULL);
 	}
 
-	void sendGW2Info(uint64 serverConnectionHandlerID, GW2Info gw2Info, int targetMode, const anyID* targetIDs) {
+	void sendGW2Info(uint64 serverConnectionHandlerID, const GW2Info& gw2Info, int targetMode, const anyID* targetIDs) {
 		anyID myID;
 		if (!getOwnClientID(serverConnectionHandlerID, &myID))
 			return;

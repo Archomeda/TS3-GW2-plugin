@@ -305,7 +305,7 @@ void ts3plugin_onPluginCommandEvent(uint64 serverConnectionHandlerID, const char
 
 	Commands::CommandType commandType;
 	vector<string> commandParameters;
-	Commands::parseCommand(pluginCommand, &commandType, &commandParameters);
+	Commands::parseCommand(pluginCommand, commandType, commandParameters);
 
 	switch(commandType) {
 		case Commands::CMD_NONE:
@@ -370,7 +370,7 @@ DWORD WINAPI checkForUpdatesAsync(LPVOID lpParam) {
 		if (difftime(time(NULL), lastUpdateCheck) >= 3600) {
 			Version newVersion;
 			string url;
-			if (checkForUpdate(true, &newVersion, &url)) {
+			if (checkForUpdate(true, newVersion, url)) {
 				string updateMessage = "[color=blue]Guild Wars 2 plugin version " + newVersion.getVersionString() + " is now available.[/color] " + 
 					"[url=" + url + "]Click here to download.[/url]";
 				ts3Functions.printMessageToCurrentTab(updateMessage.c_str());
@@ -427,11 +427,11 @@ DWORD WINAPI mumbleLinkCheckLoop(LPVOID lpParam) {
 				if (json.HasMember("team_color_id")) gw2Info.teamColorId = json["team_color_id"].GetInt();
 				if (json.HasMember("commander")) gw2Info.commander = json["commander"].GetBool();
 				GW2CacheData::MapData mapData;
-				GW2CacheData::getMapData(gw2Info.mapId, &mapData);
+				GW2CacheData::getMapData(gw2Info.mapId, mapData);
 				gw2Info.mapName = mapData.mapName;
 				gw2Info.regionId = mapData.regionID;
 				gw2Info.regionName = mapData.regionName;
-				GW2CacheData::getWorldName(gw2Info.worldId, &gw2Info.worldName);
+				GW2CacheData::getWorldName(gw2Info.worldId, gw2Info.worldName);
 				json.AddMember("map_name", gw2Info.mapName.c_str(), json.GetAllocator());
 				json.AddMember("world_name", gw2Info.worldName.c_str(), json.GetAllocator());
 				json.AddMember("region_id", gw2Info.regionId, json.GetAllocator());

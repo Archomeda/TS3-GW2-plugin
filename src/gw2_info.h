@@ -59,8 +59,8 @@ namespace GW2CacheData {
 		std::string regionName;
 	};
 
-	bool getMapData(int mapID, MapData* data);
-	bool getWorldName(int worldID, std::string* worldName);
+	bool getMapData(int mapID, MapData& data);
+	bool getWorldName(int worldID, std::string& worldName);
 
 }
 
@@ -72,17 +72,17 @@ private:
 
 protected:
 	CRITICAL_SECTION cs;
-	bool getRemoteGW2InfoRowID(uint64 serverConnectionHandlerID, anyID clientID, int* result);
+	bool getRemoteGW2InfoRowID(uint64 serverConnectionHandlerID, anyID clientID, int& result);
 
 public:
 	GW2RemoteInfoContainer();
 	~GW2RemoteInfoContainer();
 
 	std::string getInfoData(uint64 serverConnectionHandlerID, anyID clientID, enum PluginItemType type);
-	bool getInfoData(uint64 serverConnectionHandlerID, anyID clientID, enum PluginItemType type, std::string* data);
+	bool getInfoData(uint64 serverConnectionHandlerID, anyID clientID, enum PluginItemType type, std::string& data);
 
-	bool getRemoteGW2Info(uint64 serverConnectionHandlerID, anyID clientID, GW2RemoteInfo* result);
-	void updateRemoteGW2Info(GW2RemoteInfo& data);
+	bool getRemoteGW2Info(uint64 serverConnectionHandlerID, anyID clientID, GW2RemoteInfo& result);
+	void updateRemoteGW2Info(const GW2RemoteInfo& data);
 	bool removeRemoteGW2InfoRecord(uint64 serverConnectionHandlerID, anyID clientID);
 	void removeAllRemoteGW2InfoRecords(uint64 serverConnectionHandlerID);
 	void removeAllRemoteGW2InfoRecords(uint64 serverConnectionHandlerID, int* removedRecords);

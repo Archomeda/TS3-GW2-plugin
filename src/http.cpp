@@ -16,7 +16,7 @@
 #include "http.h"
 using namespace std;
 
-bool getFromHttpUrl(string url, string* result, long unsigned* lastError) {
+bool getFromHttpUrl(const string& url, string* result, long unsigned* lastError) {
 	HINTERNET hSession = InternetOpenA("TS3GW2Plugin", 0, NULL, NULL, 0);
 	if (hSession == NULL) {
 		*lastError = GetLastError();

@@ -60,11 +60,11 @@ Version::Version(const string& versionString) {
 		revision = atoi(numbers.at(3).c_str());
 }
 
-bool checkForUpdate(Version* version, string* url) {
+bool checkForUpdate(Version& version, string& url) {
 	return checkForUpdate(false, version, url);
 }
 
-bool checkForUpdate(bool includeUnstable, Version* version, string* url) {
+bool checkForUpdate(bool includeUnstable, Version& version, string& url) {
 	Version currentVersion = Version(PLUGIN_VERSION);
 	debuglog("GW2Plugin: Current version: %s (%d.%d.%d.%d-%s%d)\n", currentVersion.getVersionString().c_str(), currentVersion.getMajor(), currentVersion.getMinor(),
 		currentVersion.getBuild(), currentVersion.getRevision(), currentVersion.getPostfixUnstable().c_str(), currentVersion.getPostfixUnstableNumber());
@@ -86,10 +86,10 @@ bool checkForUpdate(bool includeUnstable, Version* version, string* url) {
 							debuglog("GW2Plugin: Found version: %s (%d.%d.%d.%d-%s%d)\n", newVersion.getVersionString().c_str(), newVersion.getMajor(), newVersion.getMinor(),
 								newVersion.getBuild(), newVersion.getRevision(), newVersion.getPostfixUnstable().c_str(), newVersion.getPostfixUnstableNumber());
 							if (newVersion > currentVersion) {
-								*version = newVersion;
+								version = newVersion;
 								char urlRelease[128];
 								sprintf_s(urlRelease, github_releaseURL.c_str(), tagName.c_str());
-								*url = string(urlRelease);
+								url = string(urlRelease);
 								debuglog("GW2Plugin: Newer version is available: %s\n", urlRelease);
 								return true;
 							} else {

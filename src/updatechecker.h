@@ -56,6 +56,6 @@ public:
 };
 
 
-bool checkForUpdate(Version* version, std::string* url);
-bool checkForUpdate(bool includeUnstable, Version* version, std::string* url);
+bool checkForUpdate(Version& version, std::string& url);
+bool checkForUpdate(bool includeUnstable, Version& version, std::string& url);
 
