@@ -9,6 +9,7 @@ Features
 ----------------
 - View character name and profession
 - View current map, region and world name
+- Check for updates automatically
 
 
 Requirements
