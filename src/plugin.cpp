@@ -360,6 +360,8 @@ bool checkForUpdates() {
 #ifndef _DEBUG
 	HANDLE hThread = CreateThread(NULL, 0, checkForUpdatesAsync, NULL, 0, NULL);
 	return hThread != 0;
+#else
+	return false;
 #endif
 }
 
