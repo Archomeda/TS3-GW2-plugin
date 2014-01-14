@@ -32,6 +32,7 @@ const std::string github_releaseURL = "https://github.com/Archomeda/TS3-GW2-plug
 
 
 Version::Version(const string& versionString) {
+	major = minor = build = revision = postfixUnstableNumber = 0;
 	this->versionString = versionString;
 	vector<string> version = split(versionString, '-', 10);
 	if (version.size() == 0)

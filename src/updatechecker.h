@@ -26,17 +26,17 @@ private:
 	int postfixUnstableNumber;
 
 public:
-	Version() { }
+	Version() {	major = minor = build = revision = postfixUnstableNumber = 0; }
 	/* Version strings here need to be in the format of major[.minor[.revision[.build]]][-postfix[number]] */
 	Version(const std::string& versionString);
 
+	std::string getVersionString() { return versionString; }
 	int getMajor() { return major; }
 	int getMinor() { return minor; }
 	int getRevision() { return revision; }
 	int getBuild() { return build; }
 	std::string getPostfixUnstable() { return postfixUnstable; }
 	int getPostfixUnstableNumber() { return postfixUnstableNumber; }
-	std::string getVersionString() { return versionString; }
 
 	friend inline bool operator==(const Version& lhs, const Version& rhs) {
 		return lhs.major == rhs.major && lhs.minor == rhs.minor
@@ -47,7 +47,7 @@ public:
 	friend inline bool operator<(const Version& lhs, const Version& rhs) {
 		return lhs.major < rhs.major || lhs.minor < rhs.minor
 			|| lhs.build < rhs.build || lhs.revision < rhs.revision
-			|| !lhs.postfixUnstable.empty() && (lhs.postfixUnstable < rhs.postfixUnstable || lhs.postfixUnstableNumber < rhs.postfixUnstableNumber);
+			|| !lhs.postfixUnstable.empty() && (rhs.postfixUnstable.empty() || lhs.postfixUnstable < rhs.postfixUnstable || lhs.postfixUnstableNumber < rhs.postfixUnstableNumber);
 	}
 	friend inline bool operator>(const Version& lhs, const Version& rhs) { return operator<(rhs, lhs); }
 	friend inline bool operator<=(const Version& lhs, const Version& rhs) { return !operator<(rhs, lhs); }
