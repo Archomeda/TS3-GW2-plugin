@@ -20,7 +20,7 @@ void split(const string &s, char delim, size_t limit, vector<string> &elems) {
 	size_t pos = 0;
 	size_t i = 0;
 	while (pos < s.length()) {
-		size_t endPos = s.find(delim, pos);
+		int endPos = (int)s.find(delim, pos);
 
 		if (endPos < 0 || i + 1 >= limit) {
 			string item = s.substr(pos, s.length() - pos);
