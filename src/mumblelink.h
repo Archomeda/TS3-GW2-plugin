@@ -45,7 +45,7 @@ namespace MumbleLink {
 	};
 
 	void initLink();
-	int getStatus();
+	bool isActive();
 	bool isGW2();
 	std::string getGame();
 	std::string getIdentity();

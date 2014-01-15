@@ -404,7 +404,7 @@ DWORD WINAPI mumbleLinkCheckLoop(LPVOID lpParam) {
 		string newIdentity;
 
 		// Check if GW2 is active and wait for 20 seconds otherwise before considering that GW2 is offline (after recently being online)
-		if (MumbleLink::getStatus() == 1 && MumbleLink::isGW2()) {
+		if (MumbleLink::isActive() == 1 && MumbleLink::isGW2()) {
 			newIsOnline = true;
 			newIdentity = MumbleLink::getIdentity();
 			lastOffline = 0;

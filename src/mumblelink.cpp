@@ -46,12 +46,12 @@ namespace MumbleLink {
 		}
 	}
 
-	int getStatus() {
+	bool isActive() {
 		if (lm->uiTick > lastTick) {
 			lastTick = lm->uiTick;
-			return 1;
+			return true;
 		}
-		return 0;
+		return false;
 	}
 
 	bool isGW2() {
