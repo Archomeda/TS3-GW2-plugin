@@ -367,6 +367,7 @@ bool checkForUpdates() {
 
 DWORD WINAPI checkForUpdatesAsync(LPVOID lpParam) {
 	try {
+		// Delay update checks for an hour since last check
 		if (difftime(time(NULL), lastUpdateCheck) >= 3600) {
 			Version newVersion;
 			string url;
@@ -388,15 +389,32 @@ DWORD WINAPI mumbleLinkCheckLoop(LPVOID lpParam) {
 	MumbleLink::initLink();
 	debuglog("GW2Plugin: Mumble Link created\n");
 
+	time_t lastMumbleLinkUpdate = 0;
+	time_t lastOffline = 0;
 	while (!threadStopRequested) {
+		// Delay too frequent changes with 5 seconds since last change, otherwise we might spam the server with commands
+		if (difftime(time(NULL), lastMumbleLinkUpdate) < 5) {
+			Sleep(50);
+			continue;
+		}
+
 		bool updated = false;
 
 		bool newIsOnline;
 		string newIdentity;
 
+		// Check if GW2 is active and wait for 20 seconds otherwise before considering that GW2 is offline (after recently being online)
 		if (MumbleLink::getStatus() == 1 && MumbleLink::isGW2()) {
 			newIsOnline = true;
 			newIdentity = MumbleLink::getIdentity();
+			lastOffline = 0;
+		} else if (difftime(time(NULL), lastOffline) < 20) {
+			Sleep(50);
+			continue;
+		} else if (lastOffline == 0) {
+			lastOffline = time(NULL);
+			Sleep(50);
+			continue;
 		} else {
 			newIsOnline = false;
 			newIdentity = "";
@@ -447,10 +465,12 @@ DWORD WINAPI mumbleLinkCheckLoop(LPVOID lpParam) {
 			}
 		}
 
-		if (updated)
+		if (updated) {
+			lastMumbleLinkUpdate = time(NULL);
 			Commands::sendGW2Info(ts3Functions.getCurrentServerConnectionHandlerID(), gw2Info, PluginCommandTarget_SERVER, NULL);
+		}
 
-		Sleep(200);
+		Sleep(50);
 	}
 	return 0;
 }
