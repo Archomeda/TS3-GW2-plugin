@@ -20,8 +20,8 @@
 #include "ts3_functions.h"
 using namespace std;
 
-#define GW2APIURL_MAP "https://api.guildwars2.com/v1/maps.json?map_id=%d"
-#define GW2APIURL_WORLDS "https://api.guildwars2.com/v1/world_names.json"
+const string gw2API_mapURL = "https://api.guildwars2.com/v1/maps.json?map_id=%d";
+const string gw2API_worldsURL = "https://api.guildwars2.com/v1/world_names.json";
 
 
 namespace GW2CacheData {
@@ -37,7 +37,7 @@ namespace GW2CacheData {
 		}
 	
 		char urlBuffer[64];
-		sprintf_s(urlBuffer, GW2APIURL_MAP, mapID);
+		sprintf_s(urlBuffer, gw2API_mapURL.c_str(), mapID);
 		string result;
 		try {
 			if (getFromHttpUrl(urlBuffer, &result, NULL)) {
@@ -79,8 +79,8 @@ namespace GW2CacheData {
 		string result;
 		bool found = false;
 		try {
-			if (getFromHttpUrl(GW2APIURL_WORLDS, &result, NULL)) {
-				debuglog("GW2Plugin: Downloaded data from %s\n", GW2APIURL_WORLDS);
+			if (getFromHttpUrl(gw2API_worldsURL, &result, NULL)) {
+				debuglog("GW2Plugin: Downloaded data from %s\n", gw2API_worldsURL);
 				rapidjson::Document json;
 				json.Parse<0>(result.c_str());
 				if (json.IsArray()) {
