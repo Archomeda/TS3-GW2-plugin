@@ -23,25 +23,27 @@
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
+#include "gw2api/gw2api.h"
+#include "gw2api/mumblelink.h"
 #include "commands.h"
 #include "plugin.h"
 #include "globals.h"
-#include "gw2_info.h"
-#include "mumblelink.h"
+#include "gw2info.h"
+#include "gw2mathutils.h"
 #include "stringutils.h"
 #include "updatechecker.h"
 using namespace std;
 using namespace Globals;
 
-GW2Info gw2Info;
-GW2RemoteInfoContainer gw2RemoteInfoContainer;
+static Gw2Info gw2Info;
+static Gw2RemoteInfoContainer gw2RemoteInfoContainer;
 
 static PluginItemType infoDataType = (PluginItemType)0;
 static uint64 infoDataId = 0;
 
-time_t lastUpdateCheck = 0;
-bool threadStopRequested = false;
-HANDLE hThread = 0;
+static time_t lastUpdateCheck = 0;
+static bool threadStopRequested = false;
+static HANDLE hThread = 0;
 
 DWORD WINAPI checkForUpdatesAsync(LPVOID lpParam);
 DWORD WINAPI mumbleLinkCheckLoop(LPVOID lpParam);
@@ -143,11 +145,12 @@ void ts3plugin_shutdown() {
 		}
 	}
 
+	gw2Info.clear();
+
 	/* In case the plugin was deactivated without shutting down TeamSpeak, we need to let the other clients know */
 	uint64 serverConnectionHandlerID = ts3Functions.getCurrentServerConnectionHandlerID();
 	if (serverConnectionHandlerID != 0) {
-		debuglog("GW2Plugin: Sending offline GW2 info message\n");
-		gw2Info.jsonData = "";
+		debuglog("GW2Plugin: Sending offline Guild Wars 2 info message\n");
 		Commands::sendGW2Info(serverConnectionHandlerID, gw2Info, PluginCommandTarget_SERVER, NULL);
 	}
 
@@ -312,28 +315,15 @@ void ts3plugin_onPluginCommandEvent(uint64 serverConnectionHandlerID, const char
 			debuglog("\tUnknown command\n");
 			break;  /* Command not handled by plugin */
 		case Commands::CMD_GW2INFO: {
-			GW2RemoteInfo gw2RemoteInfo;
-			gw2RemoteInfo.serverConnectionHandlerID = serverConnectionHandlerID;
-			gw2RemoteInfo.clientID = (int)atoi(commandParameters.at(0).c_str());
-			if (commandParameters.size() == 1) {
-				debuglog("\tCommand: GW2Info\n\tClient: %s\n\tData:\n", commandParameters.at(0).c_str());
-				gw2RemoteInfo.info.isOnline = false;
-			} else {
-				debuglog("\tCommand: GW2Info\n\tClient: %s\n\tData: %s\n", commandParameters.at(0).c_str(), commandParameters.at(1).c_str());
-				rapidjson::Document json;
-				json.Parse<0>(commandParameters.at(1).c_str());
-				gw2RemoteInfo.info.isOnline = true;
-				if (json.HasMember("name")) gw2RemoteInfo.info.characterName = json["name"].GetString();
-				if (json.HasMember("profession")) gw2RemoteInfo.info.professionId = json["profession"].GetInt();
-				if (json.HasMember("map_id")) gw2RemoteInfo.info.mapId = json["map_id"].GetUint();
-				if (json.HasMember("map_name")) gw2RemoteInfo.info.mapName = json["map_name"].GetString();
-				if (json.HasMember("region_id")) gw2RemoteInfo.info.regionId = json["region_id"].GetUint();
-				if (json.HasMember("region_name")) gw2RemoteInfo.info.regionName = json["region_name"].GetString();
-				if (json.HasMember("world_id")) gw2RemoteInfo.info.worldId = json["world_id"].GetUint();
-				if (json.HasMember("world_name")) gw2RemoteInfo.info.worldName = json["world_name"].GetString();
-				if (json.HasMember("team_color_id")) gw2RemoteInfo.info.teamColorId = json["team_color_id"].GetInt();
-				if (json.HasMember("commander")) gw2RemoteInfo.info.commander = json["commander"].GetBool();
+			if (commandParameters.size() != 2) {
+				debuglog("\tInvalid parameter count: %d\n", commandParameters.size());
+				break;
 			}
+			debuglog("\tCommand: GW2Info\n\tClient: %s\n\tData: %s\n", commandParameters.at(0).c_str(), commandParameters.at(1).c_str());
+			
+			anyID clientID = (anyID)atoi(commandParameters.at(0).c_str());
+			string jsonString = commandParameters.at(1);
+			Gw2RemoteInfo gw2RemoteInfo = Gw2RemoteInfo(jsonString, serverConnectionHandlerID, clientID);
 			gw2RemoteInfoContainer.updateRemoteGW2Info(gw2RemoteInfo);
 			updateInfoPanel();
 			break;
@@ -345,7 +335,7 @@ void ts3plugin_onPluginCommandEvent(uint64 serverConnectionHandlerID, const char
 			}
 			debuglog("\tCommand: RequestGW2Info\n\tClient: %s\n", commandParameters.at(0).c_str());
 
-			anyID clientID = (int)atoi(commandParameters.at(0).c_str());
+			anyID clientID = (anyID)atoi(commandParameters.at(0).c_str());
 			Commands::sendGW2Info(serverConnectionHandlerID, gw2Info, PluginCommandTarget_CLIENT, &clientID);
 			break;
 		}
@@ -386,11 +376,16 @@ DWORD WINAPI checkForUpdatesAsync(LPVOID lpParam) {
 
 
 DWORD WINAPI mumbleLinkCheckLoop(LPVOID lpParam) {
-	MumbleLink::initLink();
+	Gw2Api::MumbleLink::initLink();
 	debuglog("GW2Plugin: Mumble Link created\n");
 
 	time_t lastMumbleLinkUpdate = 0;
 	time_t lastOffline = 0;
+
+	bool prevIsOnline = false;
+	Gw2Api::MumbleLink::MumbleIdentity prevIdentity;
+	Gw2Api::Vector3D prevAvatarPosition;
+
 	while (!threadStopRequested) {
 		// Delay too frequent changes with 5 seconds since last change, otherwise we might spam the server with commands
 		if (difftime(time(NULL), lastMumbleLinkUpdate) < 5) {
@@ -398,15 +393,17 @@ DWORD WINAPI mumbleLinkCheckLoop(LPVOID lpParam) {
 			continue;
 		}
 
+		bool newIsOnline;
+		Gw2Api::MumbleLink::MumbleIdentity newIdentity;
+		Gw2Api::Vector3D newAvatarPosition;
+
 		bool updated = false;
 
-		bool newIsOnline;
-		string newIdentity;
-
 		// Check if GW2 is active and wait for 20 seconds otherwise before considering that GW2 is offline (after recently being online)
-		if (MumbleLink::isActive() == 1 && MumbleLink::isGW2()) {
+		if (Gw2Api::MumbleLink::isActive() && Gw2Api::MumbleLink::isGW2()) {
 			newIsOnline = true;
-			newIdentity = MumbleLink::getIdentity();
+			newIdentity = Gw2Api::MumbleLink::getIdentity();
+			newAvatarPosition = Gw2Api::MumbleLink::getAvatarPosition();
 			lastOffline = 0;
 		} else if (difftime(time(NULL), lastOffline) < 20) {
 			Sleep(50);
@@ -417,55 +414,82 @@ DWORD WINAPI mumbleLinkCheckLoop(LPVOID lpParam) {
 			continue;
 		} else {
 			newIsOnline = false;
-			newIdentity = "";
 		}
 
-		if (gw2Info.isOnline != newIsOnline) {
+		if (newIsOnline != prevIsOnline) {
 			if (newIsOnline) {
 				debuglog("GW2Plugin: Guild Wars 2 linked\n");
 			} else {
 				debuglog("GW2Plugin: Guild Wars 2 unlinked\n");
-				gw2Info.jsonData = "";
-				gw2Info.identity = "";
 			}
-			gw2Info.isOnline = newIsOnline;
 			updated = true;
 		}
 
-		if (gw2Info.isOnline) {
-			if (gw2Info.identity != newIdentity) {
-				gw2Info.identity = newIdentity;
-				gw2Info.isOnline = true;
-				rapidjson::Document json;
-				json.Parse<0>(newIdentity.c_str());
-				if (json.HasMember("name")) gw2Info.characterName = json["name"].GetString();
-				if (json.HasMember("profession")) gw2Info.professionId = json["profession"].GetInt();
-				if (json.HasMember("map_id")) gw2Info.mapId = json["map_id"].GetUint();
-				if (json.HasMember("world_id")) gw2Info.worldId = json["world_id"].GetUint();
-				if (json.HasMember("team_color_id")) gw2Info.teamColorId = json["team_color_id"].GetInt();
-				if (json.HasMember("commander")) gw2Info.commander = json["commander"].GetBool();
-				GW2CacheData::MapData mapData;
-				GW2CacheData::getMapData(gw2Info.mapId, mapData);
-				gw2Info.mapName = mapData.mapName;
-				gw2Info.regionId = mapData.regionID;
-				gw2Info.regionName = mapData.regionName;
-				GW2CacheData::getWorldName(gw2Info.worldId, gw2Info.worldName);
-				json.AddMember("map_name", gw2Info.mapName.c_str(), json.GetAllocator());
-				json.AddMember("world_name", gw2Info.worldName.c_str(), json.GetAllocator());
-				json.AddMember("region_id", gw2Info.regionId, json.GetAllocator());
-				json.AddMember("region_name", gw2Info.regionName.c_str(), json.GetAllocator());
+		if (newIsOnline) {
+			if (newIdentity != prevIdentity) {
+				debuglog("GW2Plugin: New Guild Wars 2 identity\n");
+				gw2Info.characterName = newIdentity.name;
+				gw2Info.profession = newIdentity.profession;
+				gw2Info.mapId = newIdentity.map_id;
+				gw2Info.worldId = newIdentity.world_id;
+				gw2Info.teamColorId = newIdentity.team_color_id;
+				gw2Info.commander = newIdentity.commander;
 
-				rapidjson::StringBuffer buffer;
-				rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-				json.Accept(writer);
-				gw2Info.jsonData = buffer.GetString();
+				Gw2Api::ApiInnerResponseObject<Gw2Api::MapsRootEntry, Gw2Api::MapEntry> map;
+				if (Gw2Api::getMap(gw2Info.mapId, &map)) {
+					gw2Info.mapName = map.value.map_name;
+					gw2Info.regionId = map.value.region_id;
+					gw2Info.regionName = map.value.region_name;
+					gw2Info.continentId = map.value.continent_id;
+					gw2Info.continentName = map.value.continent_name;
+				} else {
+					gw2Info.mapName = "Map " + to_string(gw2Info.mapId);
+					gw2Info.regionId = 0;
+					gw2Info.regionName = "Unknown region";
+					gw2Info.continentId = 0;
+					gw2Info.continentName = "Unknown continent";
+				}
 
-				debuglog("GW2Plugin: Got new Guild Wars 2 data: %s\n", gw2Info.jsonData.c_str());
+				Gw2Api::WorldNamesRootEntry worldNames;
+				if (Gw2Api::getWorldNames(&worldNames) && worldNames.world_names.find(gw2Info.worldId) != worldNames.world_names.end()) {
+					gw2Info.worldName = worldNames.world_names[gw2Info.worldId].name;
+				} else {
+					gw2Info.worldName = "World " + to_string(gw2Info.worldId);
+				}
+
 				updated = true;
 			}
+			if (newAvatarPosition != prevAvatarPosition) {
+				debuglog("GW2Plugin: New Guild Wars 2 position\n");
+				gw2Info.avatarPosition = newAvatarPosition;
+
+				Gw2Api::PointOfInterestEntry waypoint;
+				double waypointDistance;
+				if (getClosestWaypoint(gw2Info.avatarPosition, gw2Info.mapId, &waypoint, &waypointDistance)) {
+					gw2Info.waypointId = waypoint.poi_id;
+					if (!waypoint.name.empty()) {
+						gw2Info.waypointName = waypoint.name;
+					} else {
+						gw2Info.waypointName = "Waypoint " + to_string(gw2Info.waypointId);
+					}
+					gw2Info.waypointDistance = waypointDistance;
+				} else {
+					gw2Info.waypointId = 0;
+					gw2Info.waypointName = "";
+					gw2Info.waypointDistance = 0;
+				}
+				updated = true;
+			}
+		} else {
+			gw2Info.clear();
 		}
 
+		prevIsOnline = newIsOnline;
+		prevIdentity = newIdentity;
+		prevAvatarPosition = newAvatarPosition;
+
 		if (updated) {
+			debuglog("GW2Plugin: Guild Wars 2 data updated\n");
 			lastMumbleLinkUpdate = time(NULL);
 			Commands::sendGW2Info(ts3Functions.getCurrentServerConnectionHandlerID(), gw2Info, PluginCommandTarget_SERVER, NULL);
 		}

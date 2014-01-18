@@ -11,7 +11,7 @@
 */
 
 #pragma once
+#include "gw2api/math.h"
+#include "gw2api/objects.h"
 
-#include <string>
-
-bool getFromHttpUrl(const std::string& url, std::string* result, long unsigned* lastError);
+bool getClosestWaypoint(const Gw2Api::Vector3D& characterPosition, int map_id, Gw2Api::PointOfInterestEntry* waypoint, double* waypointDistance);

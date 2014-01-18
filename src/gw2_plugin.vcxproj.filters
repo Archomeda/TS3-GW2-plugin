@@ -18,13 +18,7 @@
     <ClCompile Include="plugin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="mumblelink.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="stringutils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="gw2_info.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="commands.cpp">
@@ -33,21 +27,18 @@
     <ClCompile Include="globals.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="http.cpp">
+    <ClCompile Include="updatechecker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="updatechecker.cpp">
+    <ClCompile Include="gw2mathutils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gw2info.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="plugin.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="gw2_info.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="mumblelink.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="stringutils.h">
@@ -59,10 +50,34 @@
     <ClInclude Include="globals.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="http.h">
+    <ClInclude Include="updatechecker.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="updatechecker.h">
+    <ClInclude Include="gw2api\gw2api.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gw2api\math.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gw2api\cache.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gw2api\parsers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gw2api\objects.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gw2api\requests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gw2api\mumblelink.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gw2mathutils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gw2info.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

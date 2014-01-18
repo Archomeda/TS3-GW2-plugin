@@ -11,7 +11,6 @@
 */
 
 #pragma once
-
 #include "ts3_functions.h"
 
 #define PLUGIN_NAME "Guild Wars 2 Plugin"

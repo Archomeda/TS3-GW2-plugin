@@ -11,7 +11,6 @@
 */
 
 #include "globals.h"
-#include "ts3_functions.h"
 
 namespace Globals {
 	TS3Functions ts3Functions;

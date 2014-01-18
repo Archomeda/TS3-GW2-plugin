@@ -10,28 +10,23 @@
  * GNU General Public License for more details.
 */
 
-#include <string>
-#include "public_definitions.h"
 #include "public_errors.h"
 #include "public_rare_definitions.h"
 #include "rapidjson/document.h"
 #include "commands.h"
 #include "globals.h"
-#include "gw2_info.h"
-#include "plugin.h"
 #include "stringutils.h"
 using namespace std;
-using namespace Globals;
 
 namespace Commands {
 
 	bool getOwnClientID(uint64 serverConnectionHandlerID, anyID* myID) {
-		if (!pluginID) {
-			debuglog("GW2Plugin: Plugin not registered, unable to broadcast Guild Wars 2 info\n");
+		if (!Globals::pluginID) {
+			debuglog("GW2Plugin: Plugin not registered, unable to get own ID\n");
 			return false;
 		}
 
-		if (ts3Functions.getClientID(serverConnectionHandlerID, myID) != ERROR_ok) {
+		if (Globals::ts3Functions.getClientID(serverConnectionHandlerID, myID) != ERROR_ok) {
 			debuglog("GW2Plugin: Failed to get own ID\n");
 			return false;
 		}
@@ -72,7 +67,7 @@ namespace Commands {
 		}
 
 		command += " " + parameters;
-		ts3Functions.sendPluginCommand(serverConnectionHandlerID, pluginID, command.c_str(), targetMode, targetIDs, returnCode);
+		Globals::ts3Functions.sendPluginCommand(serverConnectionHandlerID, Globals::pluginID, command.c_str(), targetMode, targetIDs, returnCode);
 	}
 
 	void requestGW2Info(uint64 serverConnectionHandlerID, int targetMode, const anyID* targetIDs) {
@@ -84,12 +79,12 @@ namespace Commands {
 		send(serverConnectionHandlerID, CMD_REQUESTGW2INFO, parameters, PluginCommandTarget_SERVER, targetIDs, NULL);
 	}
 
-	void sendGW2Info(uint64 serverConnectionHandlerID, const GW2Info& gw2Info, int targetMode, const anyID* targetIDs) {
+	void sendGW2Info(uint64 serverConnectionHandlerID, const Gw2Info& gw2Info, int targetMode, const anyID* targetIDs) {
 		anyID myID;
 		if (!getOwnClientID(serverConnectionHandlerID, &myID))
 			return;
 
-		string parameters = to_string(myID) + " " + gw2Info.jsonData.c_str();
+		string parameters = to_string(myID) + " " + gw2Info.toJson().c_str();
 		send(serverConnectionHandlerID, CMD_GW2INFO, parameters, PluginCommandTarget_SERVER, targetIDs, NULL);
 	}
 

@@ -13,7 +13,6 @@
 #pragma once
 #include <string>
 
-
 class Version {
 
 private:

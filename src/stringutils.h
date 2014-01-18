@@ -11,11 +11,10 @@
 */
 
 #pragma once
-
 #include <string>
 #include <vector>
 
-void split(const std::string &s, char delim, int limit, std::vector<std::string> &elems);
+void split(const std::string &s, char delim, size_t limit, std::vector<std::string> &elems);
 void split(const std::string &s, char delim, std::vector<std::string> &elems);
 std::vector<std::string> split(const std::string &s, char delim, int limit);
 std::vector<std::string> split(const std::string &s, char delim);

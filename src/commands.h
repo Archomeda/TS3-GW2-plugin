@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <string>
 #include "public_definitions.h"
-#include "gw2_info.h"
+#include "gw2info.h"
 
 #if _DEBUG
 #define debuglog(str, ...) printf(str, __VA_ARGS__);
@@ -35,6 +35,6 @@ namespace Commands {
 
 	void send(uint64 serverConnectionHandlerID, CommandType type, const std::string& parameters, int targetMode, const anyID* targetIDs, const char* returnCode);
 	void requestGW2Info(uint64 serverConnectionHandlerID, int targetMode, const anyID* targetIDs);
-	void sendGW2Info(uint64 serverConnectionHandlerID, const GW2Info& gw2Info, int targetMode, const anyID* targetIDs);
+	void sendGW2Info(uint64 serverConnectionHandlerID, const Gw2Info& gw2Info, int targetMode, const anyID* targetIDs);
 
 }

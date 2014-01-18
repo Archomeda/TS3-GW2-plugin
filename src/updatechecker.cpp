@@ -11,10 +11,10 @@
 */
 
 #include <algorithm>
-#include <string>
+#include <Windows.h>
+#include <WinInet.h>
 #include "rapidjson/document.h"
 #include "globals.h"
-#include "http.h"
 #include "stringutils.h"
 #include "updatechecker.h"
 using namespace std;
@@ -30,6 +30,43 @@ struct isnotdigit { bool operator()(char c) { return !isdigit(c); } };
 const std::string githubAPI_tagsURL = "https://api.github.com/repos/Archomeda/TS3-GW2-plugin/tags";
 const std::string github_releaseURL = "https://github.com/Archomeda/TS3-GW2-plugin/releases/tag/%s";
 
+
+static bool getFromHttpUrl(const string& url, string* result, long unsigned* lastError) {
+	HINTERNET hSession = InternetOpenA("TS3-GW2-plugin", 0, NULL, NULL, 0);
+	if (hSession == NULL) {
+		*lastError = GetLastError();
+		return false;
+	}
+
+	HINTERNET hOpenUrl = InternetOpenUrlA(hSession, url.c_str(), NULL, 0, 1, 1);
+	if (hOpenUrl == NULL) {
+		*lastError = GetLastError();
+		InternetCloseHandle(hOpenUrl);
+		return false;
+	}
+
+	char* buffer = new char[1025];
+	DWORD bytesRead = 0;
+	while (true) {
+		if (InternetReadFile(hOpenUrl, buffer, 1024, &bytesRead)) {
+			if (bytesRead == 0)
+				break;
+			buffer[bytesRead] = 0;
+			*result += buffer;
+		} else {
+			*lastError = GetLastError();
+			delete[] buffer;
+			InternetCloseHandle(hOpenUrl);
+			InternetCloseHandle(hSession);
+			return false;
+		}
+	}
+	delete[] buffer;
+
+	InternetCloseHandle(hOpenUrl);
+	InternetCloseHandle(hSession);
+	return true;
+}
 
 Version::Version(const string& versionString) {
 	major = minor = build = revision = postfixUnstableNumber = 0;

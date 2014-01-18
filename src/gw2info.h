@@ -11,78 +11,88 @@
 */
 
 #pragma once
-
-#include <map>
-#include <stdio.h>
-#include <stdint.h>
 #include <string>
 #include <vector>
 #include <Windows.h>
 #include "public_definitions.h"
+#include "gw2api/math.h"
+#include "gw2api/mumblelink.h"
+#include "globals.h"
 
-#if _DEBUG
-#define debuglog(str, ...) printf(str, __VA_ARGS__);
-#else
-#define debuglog(str, ...)
-#endif
-
-
-struct GW2Info {
-	bool isOnline;
-	std::string identity;
-	std::string jsonData;
+struct Gw2Info {
 	std::string characterName;
-	int professionId;
+	Gw2Api::MumbleLink::Profession profession;
 	int mapId;
 	std::string mapName;
 	int regionId;
 	std::string regionName;
+	int continentId;
+	std::string continentName;
 	int worldId;
 	std::string worldName;
+	Gw2Api::Vector3D avatarPosition;
+	int waypointId;
+	std::string waypointName;
+	double waypointDistance;
 	int teamColorId;
 	bool commander;
+	std::string pluginVersion;
+
+	Gw2Info() { clear(); }
+	Gw2Info(std::string jsonString);
+
+	std::string toJson() const;
+	void clear() {
+		characterName = "";
+		profession = (Gw2Api::MumbleLink::Profession)0;
+		mapId = 0;
+		mapName = "";
+		regionId = 0;
+		regionName = "";
+		continentId = 0;
+		continentName = "";
+		worldId = 0;
+		worldName = "";
+		avatarPosition = Gw2Api::Vector3D();
+		waypointId = 0;
+		waypointName = "";
+		waypointDistance = 0;
+		teamColorId = 0;
+		commander = false;
+		pluginVersion = PLUGIN_VERSION;
+	}
 };
 
-struct GW2RemoteInfo {
-	anyID clientID;
+struct Gw2RemoteInfo : Gw2Info {
 	uint64 serverConnectionHandlerID;
-	GW2Info info;
+	anyID clientID;
+
+	Gw2RemoteInfo() : Gw2Info() { }
+	Gw2RemoteInfo(std::string jsonString, uint64 serverConnectionHandlerID, anyID clientID) : Gw2Info(jsonString) {
+		this->serverConnectionHandlerID = serverConnectionHandlerID;
+		this->clientID = clientID;
+	}
 };
 
 
-namespace GW2CacheData {
-
-	struct MapData {
-		int mapID;
-		std::string mapName;
-		int regionID;
-		std::string regionName;
-	};
-
-	bool getMapData(int mapID, MapData& data);
-	bool getWorldName(int worldID, std::string& worldName);
-
-}
-
-
-class GW2RemoteInfoContainer {
+class Gw2RemoteInfoContainer {
 
 private:
-	std::vector<GW2RemoteInfo> gw2RemoteInfos;
+	std::vector<Gw2RemoteInfo> gw2RemoteInfos;
 
 protected:
 	CRITICAL_SECTION cs;
 	bool getRemoteGW2InfoRowID(uint64 serverConnectionHandlerID, anyID clientID, int& result);
 
 public:
-	GW2RemoteInfoContainer();
-	~GW2RemoteInfoContainer();
+	Gw2RemoteInfoContainer();
+	~Gw2RemoteInfoContainer();
 
 	std::string getInfoData(uint64 serverConnectionHandlerID, anyID clientID, enum PluginItemType type);
 	bool getInfoData(uint64 serverConnectionHandlerID, anyID clientID, enum PluginItemType type, std::string& data);
 
-	bool getRemoteGW2Info(uint64 serverConnectionHandlerID, anyID clientID, GW2RemoteInfo& result);
-	void updateRemoteGW2Info(const GW2RemoteInfo& data);
+	bool getRemoteGW2Info(uint64 serverConnectionHandlerID, anyID clientID, Gw2RemoteInfo& result);
+	void updateRemoteGW2Info(const Gw2RemoteInfo& data);
 	bool removeRemoteGW2InfoRecord(uint64 serverConnectionHandlerID, anyID clientID);
 	void removeAllRemoteGW2InfoRecords(uint64 serverConnectionHandlerID);
 	void removeAllRemoteGW2InfoRecords(uint64 serverConnectionHandlerID, int* removedRecords);

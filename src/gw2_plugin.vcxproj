@@ -167,9 +167,8 @@
   <ItemGroup>
     <ClCompile Include="commands.cpp" />
     <ClCompile Include="globals.cpp" />
-    <ClCompile Include="gw2_info.cpp" />
-    <ClCompile Include="http.cpp" />
-    <ClCompile Include="mumblelink.cpp" />
+    <ClCompile Include="gw2mathutils.cpp" />
+    <ClCompile Include="gw2info.cpp" />
     <ClCompile Include="plugin.cpp" />
     <ClCompile Include="stringutils.cpp" />
     <ClCompile Include="updatechecker.cpp" />
@@ -177,9 +176,15 @@
   <ItemGroup>
     <ClInclude Include="commands.h" />
     <ClInclude Include="globals.h" />
-    <ClInclude Include="gw2_info.h" />
-    <ClInclude Include="http.h" />
-    <ClInclude Include="mumblelink.h" />
+    <ClInclude Include="gw2api\cache.h" />
+    <ClInclude Include="gw2api\gw2api.h" />
+    <ClInclude Include="gw2mathutils.h" />
+    <ClInclude Include="gw2api\mumblelink.h" />
+    <ClInclude Include="gw2api\math.h" />
+    <ClInclude Include="gw2api\objects.h" />
+    <ClInclude Include="gw2api\parsers.h" />
+    <ClInclude Include="gw2api\requests.h" />
+    <ClInclude Include="gw2info.h" />
     <ClInclude Include="plugin.h" />
     <ClInclude Include="stringutils.h" />
     <ClInclude Include="updatechecker.h" />
