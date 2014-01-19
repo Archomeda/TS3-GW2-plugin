@@ -121,6 +121,20 @@ Gw2RemoteInfoContainer::~Gw2RemoteInfoContainer() {
 	DeleteCriticalSection(&cs);
 }
 
+static string getDirectionString(Angle::Direction direction) {
+	switch (direction) {
+		case Angle::North: return "north";
+		case Angle::NorthEast: return "northeast";
+		case Angle::East: return "east";
+		case Angle::SouthEast: return "southeast";
+		case Angle::South: return "south";
+		case Angle::SouthWest: return "southwest";
+		case Angle::West: return "west";
+		case Angle::NorthWest: return "northwest";
+	}
+	return "";
+}
+
 string Gw2RemoteInfoContainer::getInfoData(uint64 serverConnectionHandlerID, anyID clientID, PluginItemType type) {
 	string data;
 	getInfoData(serverConnectionHandlerID, clientID, type, data);
@@ -138,9 +152,22 @@ bool Gw2RemoteInfoContainer::getInfoData(uint64 serverConnectionHandlerID, anyID
 				data = "Playing as [color=blue]" + gw2RemoteInfo.characterName + "[/color] (" + getProfessionName(gw2RemoteInfo.profession) + ")\n" +
 					gw2RemoteInfo.regionName + " - [color=blue]" + gw2RemoteInfo.mapName + "[/color] (" + gw2RemoteInfo.worldName + ")";
 				if (gw2RemoteInfo.waypointId > 0) {
-					data += "\nNear [color=blue]" + gw2RemoteInfo.waypointName + "[/color]";
+					Vector2D characterPosition = gw2RemoteInfo.characterContinentPosition.toVector2D();
+					double waypointDistance = characterPosition.getDistance(gw2RemoteInfo.waypointContinentPosition);
+					Angle angle = characterPosition.getAngleFrom(gw2RemoteInfo.waypointContinentPosition);
+					if (waypointDistance < 50) {
+						data += "\nRight next to [color=blue]" + gw2RemoteInfo.waypointName + "[/color]";
+					} else if (waypointDistance < 200) {
+						data += "\nNear " + getDirectionString(angle) + " of [color=blue]" + gw2RemoteInfo.waypointName + "[/color]";
+					} else if (waypointDistance < 400) {
+						data += "\nSomewhere " + getDirectionString(angle) + " of [color=blue]" + gw2RemoteInfo.waypointName + "[/color]";
+					} else if (waypointDistance < 700) {
+						data += "\nFar " + getDirectionString(angle) + " of [color=blue]" + gw2RemoteInfo.waypointName + "[/color]";
+					} else if (waypointDistance) {
+						data += "\nVery far " + getDirectionString(angle) + " of [color=blue]" + gw2RemoteInfo.waypointName + "[/color]";
+					}
 				} else {
-					data += "\nNo near waypoint";
+					data += "\nNot nearby any waypoint";
 				}
 			}
 			return true;

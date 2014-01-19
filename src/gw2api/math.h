@@ -11,6 +11,7 @@
 */
 
 #pragma once
+#define _USE_MATH_DEFINES
 #include <math.h>
 
 #define INCH_TO_METER 0.0254F
@@ -18,6 +19,49 @@
 namespace Gw2Api {
 
 	// Structs are not complete, only the things that are used within the plugin are implemented
+
+	struct Angle {
+		double angle;
+
+		Angle(double angle) { this->angle = angle; }
+
+		enum Direction {
+			North,
+			NorthEast,
+			East,
+			SouthEast,
+			South,
+			SouthWest,
+			West,
+			NorthWest
+		};
+
+		Direction getDirection() {
+			if (angle < -157.5)
+				return West;
+			else if (angle < -112.5)
+				return NorthWest;
+			else if (angle < -67.5)
+				return North;
+			else if (angle < -22.5)
+				return NorthEast;
+			else if (angle < 22.5)
+				return East;
+			else if (angle < 67.5)
+				return SouthEast;
+			else if (angle < 122.5)
+				return South;
+			else if (angle < 157.5)
+				return SouthWest;
+			else
+				return West;
+		}
+
+		operator double() { return angle; }
+
+		operator Direction() { return getDirection(); }
+
+	};
 
 	struct Vector2D;
 	struct Vector3D;
@@ -38,8 +82,18 @@ namespace Gw2Api {
 
 		Vector3D toVector3D(int y) const;
 
+		Angle getAngleFrom(const Vector2D v) {
+			Vector2D angleV = *this - v;
+			return atan2(angleV.y, angleV.x) * 180 / M_PI;
+		}
+
+		Angle getAngleTo(const Vector2D v) {
+			Vector2D angleV = v - *this;
+			return atan2(angleV.y, angleV.x) * 180 / M_PI;
+		}
+
 		double getDistance(const Vector2D& v) {
-			Vector2D distanceV = v - *this;
+			Vector2D distanceV = *this - v;
 			return distanceV.getSize();
 		}
 
