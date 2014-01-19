@@ -36,7 +36,7 @@ namespace Gw2Api {
 			this->y = y;
 		}
 
-		Vector3D toVector3D(int y);
+		Vector3D toVector3D(int y) const;
 
 		double getDistance(const Vector2D& v) {
 			Vector2D distanceV = v - *this;
@@ -138,7 +138,7 @@ namespace Gw2Api {
 			this->z = z;
 		}
 
-		Vector2D toVector2D();
+		Vector2D toVector2D() const;
 
 		friend Vector3D operator*(const Vector3D& v, double scalar) {
 			return Vector3D(v.x * scalar, v.y * scalar, v.z * scalar);
@@ -321,11 +321,11 @@ namespace Gw2Api {
 		}
 	};
 
-	inline Vector3D Vector2D::toVector3D(int y) {
+	inline Vector3D Vector2D::toVector3D(int y) const {
 		return Vector3D(this->x, y, this->y);
 	}
 
-	inline Vector2D Vector3D::toVector2D() {
+	inline Vector2D Vector3D::toVector2D() const {
 		return Vector2D(this->x, this->z);
 	}
 
