@@ -80,5 +80,11 @@
     <ClInclude Include="gw2info.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="gw2api\base64.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gw2api\chat.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

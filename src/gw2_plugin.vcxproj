@@ -176,7 +176,9 @@
   <ItemGroup>
     <ClInclude Include="commands.h" />
     <ClInclude Include="globals.h" />
+    <ClInclude Include="gw2api\base64.h" />
     <ClInclude Include="gw2api\cache.h" />
+    <ClInclude Include="gw2api\chat.h" />
     <ClInclude Include="gw2api\gw2api.h" />
     <ClInclude Include="gw2mathutils.h" />
     <ClInclude Include="gw2api\mumblelink.h" />

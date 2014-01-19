@@ -14,9 +14,11 @@
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
+#include "gw2api/chat.h"
 #include "gw2info.h"
 using namespace std;
 using namespace Gw2Api;
+using namespace Gw2Api::ChatLink;
 using namespace Gw2Api::MumbleLink;
 
 #if _DEBUG
@@ -156,16 +158,17 @@ bool Gw2RemoteInfoContainer::getInfoData(uint64 serverConnectionHandlerID, anyID
 					double waypointDistance = characterPosition.getDistance(gw2RemoteInfo.waypointContinentPosition);
 					Angle angle = characterPosition.getAngleFrom(gw2RemoteInfo.waypointContinentPosition);
 					if (waypointDistance < 50) {
-						data += "\nRight next to [color=blue]" + gw2RemoteInfo.waypointName + "[/color]";
+						data += "\nRight next to ";
 					} else if (waypointDistance < 200) {
-						data += "\nNear " + getDirectionString(angle) + " of [color=blue]" + gw2RemoteInfo.waypointName + "[/color]";
+						data += "\nNear " + getDirectionString(angle) + " of ";
 					} else if (waypointDistance < 400) {
-						data += "\nSomewhere " + getDirectionString(angle) + " of [color=blue]" + gw2RemoteInfo.waypointName + "[/color]";
+						data += "\nSomewhere " + getDirectionString(angle) + " of ";
 					} else if (waypointDistance < 700) {
-						data += "\nFar " + getDirectionString(angle) + " of [color=blue]" + gw2RemoteInfo.waypointName + "[/color]";
+						data += "\nFar " + getDirectionString(angle) + " of ";
 					} else {
-						data += "\nVery far " + getDirectionString(angle) + " of [color=blue]" + gw2RemoteInfo.waypointName + "[/color]";
+						data += "\nVery far " + getDirectionString(angle) + " of ";
 					}
+					data += "[color=blue]" + gw2RemoteInfo.waypointName + "[/color] [&" + poiToChatLink(gw2RemoteInfo.waypointId) + "]";
 				} else {
 					data += "\nNot nearby any waypoint";
 				}
