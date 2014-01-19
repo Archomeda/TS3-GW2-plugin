@@ -77,6 +77,15 @@ namespace Gw2Api {
 			int team_color_id;
 			bool commander;
 
+			MumbleIdentity() {
+				name = "";
+				profession = (Profession)0;
+				map_id = 0;
+				world_id = 0;
+				team_color_id = 0;
+				commander = false;
+			}
+
 			friend bool operator==(const MumbleIdentity& lhs, const MumbleIdentity& rhs) {
 				return lhs.name == rhs.name && lhs.profession == rhs.profession && lhs.map_id == rhs.map_id
 					&& lhs.world_id == rhs.world_id && lhs.team_color_id == rhs.team_color_id
@@ -151,7 +160,7 @@ namespace Gw2Api {
 			if (!rj_map_id.IsNull() && rj_map_id.IsInt())				mumbleIdentity.map_id = rj_map_id.GetInt();
 			if (!rj_world_id.IsNull() && rj_world_id.IsInt())			mumbleIdentity.world_id = rj_world_id.GetInt();
 			if (!rj_team_color_id.IsNull() && rj_team_color_id.IsInt())	mumbleIdentity.team_color_id = rj_team_color_id.GetInt();
-			if (!rj_commander.IsNull() && rj_commander.IsInt())			mumbleIdentity.commander = rj_commander.GetInt() != 0;
+			if (!rj_commander.IsNull() && rj_commander.IsBool())		mumbleIdentity.commander = rj_commander.GetBool();
 
 			return mumbleIdentity;
 		}
