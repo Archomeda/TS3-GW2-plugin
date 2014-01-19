@@ -30,10 +30,10 @@ struct Gw2Info {
 	std::string continentName;
 	int worldId;
 	std::string worldName;
-	Gw2Api::Vector3D avatarPosition;
+	Gw2Api::Vector3D characterContinentPosition;
 	int waypointId;
 	std::string waypointName;
-	double waypointDistance;
+	Gw2Api::Vector2D waypointContinentPosition;
 	int teamColorId;
 	bool commander;
 	std::string pluginVersion;
@@ -53,10 +53,10 @@ struct Gw2Info {
 		continentName = "";
 		worldId = 0;
 		worldName = "";
-		avatarPosition = Gw2Api::Vector3D();
+		characterContinentPosition = Gw2Api::Vector3D();
 		waypointId = 0;
 		waypointName = "";
-		waypointDistance = 0;
+		waypointContinentPosition = Gw2Api::Vector2D();
 		teamColorId = 0;
 		commander = false;
 		pluginVersion = PLUGIN_VERSION;

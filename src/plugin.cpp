@@ -461,22 +461,26 @@ DWORD WINAPI mumbleLinkCheckLoop(LPVOID lpParam) {
 			}
 			if (newAvatarPosition != prevAvatarPosition) {
 				debuglog("GW2Plugin: New Guild Wars 2 position\n");
-				gw2Info.avatarPosition = newAvatarPosition;
+				Gw2Api::ApiInnerResponseObject<Gw2Api::MapsRootEntry, Gw2Api::MapEntry> map;
+				if (Gw2Api::getMap(gw2Info.mapId, &map)) {
+					Gw2Api::Gw2Position position = Gw2Api::Gw2Position(newAvatarPosition, Gw2Api::Gw2Position::Mumble,
+						gw2Info.mapId, map.value.map_rect, map.value.continent_rect).toContinentPosition();
+					gw2Info.characterContinentPosition = position.position;
+				}
 
 				Gw2Api::PointOfInterestEntry waypoint;
-				double waypointDistance;
-				if (getClosestWaypoint(gw2Info.avatarPosition, gw2Info.mapId, &waypoint, &waypointDistance)) {
+				if (getClosestWaypoint(gw2Info.characterContinentPosition, gw2Info.mapId, &waypoint)) {
 					gw2Info.waypointId = waypoint.poi_id;
 					if (!waypoint.name.empty()) {
 						gw2Info.waypointName = waypoint.name;
 					} else {
 						gw2Info.waypointName = "Waypoint " + to_string(gw2Info.waypointId);
 					}
-					gw2Info.waypointDistance = waypointDistance;
+					gw2Info.waypointContinentPosition = waypoint.coord;
 				} else {
 					gw2Info.waypointId = 0;
 					gw2Info.waypointName = "";
-					gw2Info.waypointDistance = 0;
+					gw2Info.waypointContinentPosition = Gw2Api::Vector2D();
 				}
 				updated = true;
 			}

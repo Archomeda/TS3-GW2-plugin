@@ -14,14 +14,11 @@
 #include "gw2api/gw2api.h"
 using namespace Gw2Api;
 
-bool getClosestWaypoint(const Vector3D& characterPosition, int map_id, PointOfInterestEntry* waypoint, double* waypointDistance) {
+bool getClosestWaypoint(const Vector3D& characterContinentPosition, int map_id, PointOfInterestEntry* waypoint) {
 	ApiInnerResponseObject<MapsRootEntry, MapEntry> map;
 	getMap(map_id, &map);
 
-	Gw2Position mapPosition = Gw2Position(characterPosition, Gw2Position::Mumble, map_id, map.value.map_rect, map.value.continent_rect).toMapPosition();
-	Gw2Position continentPosition = mapPosition.toContinentPosition();
-
-	Vector2D position2D = continentPosition.position.toVector2D();
+	Vector2D position2D = characterContinentPosition.toVector2D();
 	double currentDistance;
 	for (unsigned i = 0; i < map.value.floors.size(); i++) {
 		int floor = map.value.floors[i];
@@ -46,10 +43,5 @@ bool getClosestWaypoint(const Vector3D& characterPosition, int map_id, PointOfIn
 		}
 	}
 
-	if (!waypoint->name.empty()) {
-		*waypointDistance = mapPosition.position.toVector2D().getDistance(
-			continentPosition.toMapPosition(waypoint->coord.toVector3D(0), Gw2Position::Continent).toVector2D());
-		return true;
-	}
-	return false;
+	return !waypoint->name.empty();
 }

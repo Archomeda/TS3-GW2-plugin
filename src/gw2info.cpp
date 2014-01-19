@@ -31,6 +31,7 @@ Gw2Info::Gw2Info(string jsonString) {
 	if (!json.Parse<0>(jsonString.c_str()).HasParseError()) {
 		const rapidjson::Value& rj_character_name = json["character_name"];
 		const rapidjson::Value& rj_profession = json["profession"];
+		const rapidjson::Value& rj_character_continent_position = json["character_continent_position"];
 		const rapidjson::Value& rj_map_id = json["map_id"];
 		const rapidjson::Value& rj_map_name = json["map_name"];
 		const rapidjson::Value& rj_region_id = json["region_id"];
@@ -41,14 +42,20 @@ Gw2Info::Gw2Info(string jsonString) {
 		const rapidjson::Value& rj_world_name = json["world_name"];
 		const rapidjson::Value& rj_waypoint_id = json["waypoint_id"];
 		const rapidjson::Value& rj_waypoint_name = json["waypoint_name"];
-		const rapidjson::Value& rj_waypoint_distance = json["waypoint_distance"];
+		const rapidjson::Value& rj_waypoint_continent_position = json["waypoint_continent_position"];
 		const rapidjson::Value& rj_team_color_id = json["team_color_id"];
 		const rapidjson::Value& rj_commander = json["commander"];
-		const rapidjson::Value& rj_avatar_position = json["avatar_position"];
 		const rapidjson::Value& rj_plugin_version = json["plugin_version"];
 
 		if (!rj_character_name.IsNull() && rj_character_name.IsString())		characterName = rj_character_name.GetString();
 		if (!rj_profession.IsNull() && rj_profession.IsInt())					profession = (Profession)rj_profession.GetInt();
+		if (!rj_character_continent_position.IsNull() && rj_character_continent_position.IsArray()) {
+			characterContinentPosition = Vector3D(
+				rj_character_continent_position[0u].GetDouble(),
+				rj_character_continent_position[1].GetDouble(),
+				rj_character_continent_position[2].GetDouble()
+			);
+		}
 		if (!rj_map_id.IsNull() && rj_map_id.IsInt())							mapId = rj_map_id.GetInt();
 		if (!rj_map_name.IsNull() && rj_map_name.IsString())					mapName = rj_map_name.GetString();
 		if (!rj_region_id.IsNull() && rj_region_id.IsInt())						regionId = rj_region_id.GetInt();
@@ -59,16 +66,14 @@ Gw2Info::Gw2Info(string jsonString) {
 		if (!rj_world_name.IsNull() && rj_world_name.IsString())				worldName = rj_world_name.GetString();
 		if (!rj_waypoint_id.IsNull() && rj_waypoint_id.IsInt())					waypointId = rj_waypoint_id.GetInt();
 		if (!rj_waypoint_name.IsNull() && rj_waypoint_name.IsString())			waypointName = rj_waypoint_name.GetString();
-		if (!rj_waypoint_distance.IsNull() && rj_waypoint_distance.IsDouble())	waypointDistance = rj_waypoint_distance.GetDouble();
-		if (!rj_team_color_id.IsNull() && rj_team_color_id.IsString())			teamColorId = rj_team_color_id.GetInt();
-		if (!rj_commander.IsNull() && rj_commander.IsBool())					commander = rj_commander.GetBool();
-		if (!rj_avatar_position.IsNull() && rj_avatar_position.IsArray()) {
-			avatarPosition = Vector3D(
-				rj_avatar_position[0u].GetDouble(),
-				rj_avatar_position[1].GetDouble(),
-				rj_avatar_position[2].GetDouble()
+		if (!rj_waypoint_continent_position.IsNull() && rj_waypoint_continent_position.IsArray()) {
+			waypointContinentPosition = Vector2D(
+				rj_waypoint_continent_position[0u].GetDouble(),
+				rj_waypoint_continent_position[1].GetDouble()
 			);
 		}
+		if (!rj_team_color_id.IsNull() && rj_team_color_id.IsString())			teamColorId = rj_team_color_id.GetInt();
+		if (!rj_commander.IsNull() && rj_commander.IsBool())					commander = rj_commander.GetBool();
 		if (!rj_plugin_version.IsNull() && rj_plugin_version.IsString())		pluginVersion = rj_plugin_version.GetString();
 	}
 }
@@ -78,6 +83,11 @@ string Gw2Info::toJson() const {
 	json.Parse<0>("{}");
 	json.AddMember("character_name", characterName.c_str(), json.GetAllocator());
 	json.AddMember("profession", profession, json.GetAllocator());
+	json.AddMember("character_continent_position", "[]", json.GetAllocator());
+	json["character_continent_position"].SetArray();
+	json["character_continent_position"].PushBack(characterContinentPosition.x, json.GetAllocator());
+	json["character_continent_position"].PushBack(characterContinentPosition.y, json.GetAllocator());
+	json["character_continent_position"].PushBack(characterContinentPosition.z, json.GetAllocator());
 	json.AddMember("map_id", mapId, json.GetAllocator());
 	json.AddMember("map_name", mapName.c_str(), json.GetAllocator());
 	json.AddMember("region_id", regionId, json.GetAllocator());
@@ -88,14 +98,12 @@ string Gw2Info::toJson() const {
 	json.AddMember("world_name", worldName.c_str(), json.GetAllocator());
 	json.AddMember("waypoint_id", waypointId, json.GetAllocator());
 	json.AddMember("waypoint_name", waypointName.c_str(), json.GetAllocator());
-	json.AddMember("waypoint_distance", waypointDistance, json.GetAllocator());
+	json.AddMember("waypoint_continent_position", "[]", json.GetAllocator());
+	json["waypoint_continent_position"].SetArray();
+	json["waypoint_continent_position"].PushBack(waypointContinentPosition.x, json.GetAllocator());
+	json["waypoint_continent_position"].PushBack(waypointContinentPosition.y, json.GetAllocator());
 	json.AddMember("team_color_id", teamColorId, json.GetAllocator());
 	json.AddMember("commander", commander, json.GetAllocator());
-	json.AddMember("avatar_position", "[]", json.GetAllocator());
-	json["avatar_position"].SetArray();
-	json["avatar_position"].PushBack(avatarPosition.x, json.GetAllocator());
-	json["avatar_position"].PushBack(avatarPosition.y, json.GetAllocator());
-	json["avatar_position"].PushBack(avatarPosition.z, json.GetAllocator());
 	json.AddMember("plugin_version", pluginVersion.c_str(), json.GetAllocator());
 
 	rapidjson::StringBuffer buffer;
