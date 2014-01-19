@@ -54,7 +54,7 @@ namespace Gw2Api {
 				for (RJSizeType i = 0; i < jsonValue.Size(); i++) {
 					if (!jsonValue[i].IsNull() && jsonValue[i].IsInt()) result->push_back((T)jsonValue[i].GetInt());
 					else if (!jsonValue[i].IsNull() && jsonValue[i].IsInt64()) result->push_back((T)jsonValue[i].GetInt64());
-					else if (!jsonValue[i].IsNull() && jsonValue[i].IsUint()) result->push_back((T)jsonValue[i].GetUint64());
+					else if (!jsonValue[i].IsNull() && jsonValue[i].IsUint()) result->push_back((T)jsonValue[i].GetUint());
 					else if (!jsonValue[i].IsNull() && jsonValue[i].IsUint64()) result->push_back((T)jsonValue[i].GetUint64());
 					else if (!jsonValue[i].IsNull() && jsonValue[i].IsDouble()) result->push_back((T)jsonValue[i].GetDouble());
 				}
