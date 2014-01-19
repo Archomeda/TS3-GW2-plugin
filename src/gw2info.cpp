@@ -163,7 +163,7 @@ bool Gw2RemoteInfoContainer::getInfoData(uint64 serverConnectionHandlerID, anyID
 						data += "\nSomewhere " + getDirectionString(angle) + " of [color=blue]" + gw2RemoteInfo.waypointName + "[/color]";
 					} else if (waypointDistance < 700) {
 						data += "\nFar " + getDirectionString(angle) + " of [color=blue]" + gw2RemoteInfo.waypointName + "[/color]";
-					} else if (waypointDistance) {
+					} else {
 						data += "\nVery far " + getDirectionString(angle) + " of [color=blue]" + gw2RemoteInfo.waypointName + "[/color]";
 					}
 				} else {
