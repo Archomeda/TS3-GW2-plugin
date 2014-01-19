@@ -12,6 +12,7 @@
 
 #pragma once
 #include <string>
+#include <stdint.h>
 #include <vector>
 
 void split(const std::string &s, char delim, size_t limit, std::vector<std::string> &elems);
@@ -19,3 +20,4 @@ void split(const std::string &s, char delim, std::vector<std::string> &elems);
 std::vector<std::string> split(const std::string &s, char delim, int limit);
 std::vector<std::string> split(const std::string &s, char delim);
 std::string to_string(int value);
+std::string to_string(uint32_t value);

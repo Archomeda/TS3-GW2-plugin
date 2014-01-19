@@ -22,19 +22,19 @@
 struct Gw2Info {
 	std::string characterName;
 	Gw2Api::MumbleLink::Profession profession;
-	int mapId;
+	uint32_t mapId;
 	std::string mapName;
-	int regionId;
+	uint32_t regionId;
 	std::string regionName;
-	int continentId;
+	uint32_t continentId;
 	std::string continentName;
-	int worldId;
+	uint32_t worldId;
 	std::string worldName;
 	Gw2Api::Vector3D characterContinentPosition;
-	int waypointId;
+	uint32_t waypointId;
 	std::string waypointName;
 	Gw2Api::Vector2D waypointContinentPosition;
-	int teamColorId;
+	uint32_t teamColorId;
 	bool commander;
 	std::string pluginVersion;
 

@@ -51,3 +51,11 @@ vector<string> split(const string &s, char delim) {
 string to_string(int value) {
 	return to_string((long long)value);
 }
+
+string to_string(uint32_t value) {
+	stringstream ss;
+	ss << value;
+	string str;
+	ss >> str;
+	return str;
+}

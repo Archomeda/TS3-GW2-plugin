@@ -72,9 +72,9 @@ namespace Gw2Api {
 		struct MumbleIdentity {
 			std::string name;
 			Profession profession;
-			int map_id;
-			int world_id;
-			int team_color_id;
+			uint32_t map_id;
+			uint32_t world_id;
+			uint32_t team_color_id;
 			bool commander;
 
 			MumbleIdentity() {
@@ -157,9 +157,9 @@ namespace Gw2Api {
 
 			if (!rj_name.IsNull() && rj_name.IsString())				mumbleIdentity.name = rj_name.GetString();
 			if (!rj_profession.IsNull() && rj_profession.IsInt())		mumbleIdentity.profession = (Profession)rj_profession.GetInt();
-			if (!rj_map_id.IsNull() && rj_map_id.IsInt())				mumbleIdentity.map_id = rj_map_id.GetInt();
-			if (!rj_world_id.IsNull() && rj_world_id.IsInt())			mumbleIdentity.world_id = rj_world_id.GetInt();
-			if (!rj_team_color_id.IsNull() && rj_team_color_id.IsInt())	mumbleIdentity.team_color_id = rj_team_color_id.GetInt();
+			if (!rj_map_id.IsNull() && rj_map_id.IsUint())				mumbleIdentity.map_id = rj_map_id.GetUint();
+			if (!rj_world_id.IsNull() && rj_world_id.IsUint())			mumbleIdentity.world_id = rj_world_id.GetUint();
+			if (!rj_team_color_id.IsNull() && rj_team_color_id.IsUint())	mumbleIdentity.team_color_id = rj_team_color_id.GetUint();
 			if (!rj_commander.IsNull() && rj_commander.IsBool())		mumbleIdentity.commander = rj_commander.GetBool();
 
 			return mumbleIdentity;
