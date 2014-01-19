@@ -176,6 +176,7 @@ bool Gw2RemoteInfoContainer::getInfoData(uint64 serverConnectionHandlerID, anyID
 			return true;
 		} else {
 			debuglog("GW2Plugin: No data found for client %d\n", clientID);
+			data = "No information available";
 		}
 	}
 	return false;
