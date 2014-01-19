@@ -329,7 +329,6 @@ namespace Gw2Api {
 			switch (oldUnit) {
 				case Map:
 					newPos *= INCH_TO_METER;
-					newPos.z = -newPos.z;
 					break;
 
 				case Continent:
@@ -344,12 +343,12 @@ namespace Gw2Api {
 			switch (oldUnit) {
 				case Mumble:					
 					newPos /= INCH_TO_METER;
-					newPos.z = -newPos.z;
 					break;
 
 				case Continent:
 					Vector2D continentPos = Vector2D(position.x, position.z);
 					Vector2D relativeContinentPos = (continentPos - continentRectangle.upperLeft) / continentRectangle.getSize();
+					relativeContinentPos.y = 1 - relativeContinentPos.y; // Fixing inversion problem
 					Vector2D mapPos = mapRectangle.upperLeft + relativeContinentPos * mapRectangle.getSize();
 					newPos = Vector3D(mapPos.x, position.y, mapPos.y);
 					break;
@@ -367,6 +366,7 @@ namespace Gw2Api {
 				case Map:
 					Vector2D mapPos = Vector2D(position.x, position.z);
 					Vector2D relativeMapPos = (mapPos - mapRectangle.upperLeft) / mapRectangle.getSize();
+					relativeMapPos.y = 1 - relativeMapPos.y; // Fixing inversion problem
 					Vector2D continentPos = continentRectangle.upperLeft + relativeMapPos * continentRectangle.getSize();
 					newPos = Vector3D(continentPos.x, position.y, continentPos.y);
 					break;
