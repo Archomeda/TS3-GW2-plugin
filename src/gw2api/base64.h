@@ -19,7 +19,7 @@ namespace Gw2Api {
 
 	const static char encodeLookup[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 	const static char padCharacter = '=';
-	std::string base64Encode(std::vector<unsigned char> inputBuffer)
+	inline std::string base64Encode(std::vector<unsigned char> inputBuffer)
 	{
 		std::string encodedString;
 		encodedString.reserve(((inputBuffer.size()/3) + (inputBuffer.size() % 3 > 0)) * 4);
