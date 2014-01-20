@@ -9,6 +9,7 @@ Features
 ----------------
 - View character name and profession
 - View current map, region and world name
+- View name, direction and chat link of the closest waypoint nearby
 - Check for updates automatically
 
 
@@ -23,7 +24,7 @@ Compiling notes
 ---------------
 Compilation of this plugin has been tested in Visual Studio 2010 only. Newer versions should work, but it is not guaranteed that it will. Older versions will most likely not work though.
 
-Inside the include folder you can find a couple of third party header files: the TeamSpeak 3 Client Plugin SDK and [rapidjson](http://code.google.com/p/rapidjson/).
+Inside the dependencies folder you can find a couple of third party header files: the TeamSpeak 3 Client Plugin SDK and [rapidjson](http://code.google.com/p/rapidjson/).
 
 
 Legal stuff
