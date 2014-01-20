@@ -11,8 +11,27 @@
 */
 
 #include "globals.h"
+#include <QtCore/QSettings>
 
 namespace Globals {
 	TS3Functions ts3Functions;
 	char* pluginID;
+
+	int locationTransmissionThreshold = DEFAULTCONFIG_LOCATIONTRANSMISSIONTHRESHOLD;
+	int onlineStateTransmissionThreshold = DEFAULTCONFIG_ONLINESTATETRANSMISSIONTHRESHOLD;
+
+	void loadConfig() {
+		QSettings cfg(QString::fromStdString(getConfigFilePath()), QSettings::IniFormat);
+		locationTransmissionThreshold = cfg.value("locationTransmissionThreshold", DEFAULTCONFIG_LOCATIONTRANSMISSIONTHRESHOLD).toInt();
+		onlineStateTransmissionThreshold = cfg.value("onlineStateTransmissionThreshold", DEFAULTCONFIG_ONLINESTATETRANSMISSIONTHRESHOLD).toInt();
+	}
+
+	std::string getConfigFilePath() {
+		char* configPath = (char*)malloc(512);
+		ts3Functions.getConfigPath(configPath, 512);
+		std::string path = configPath;
+		free(configPath);
+		path.append("GW2Plugin.ini");
+		return path;
+	}
 }

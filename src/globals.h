@@ -11,6 +11,7 @@
 */
 
 #pragma once
+#include <string>
 #include "ts3_functions.h"
 
 #define PLUGIN_NAME "Guild Wars 2 Plugin"
@@ -19,8 +20,18 @@
 #define PLUGIN_AUTHOR "Archomeda"
 #define PLUGIN_DESCRIPTION "This plugin adds some Guild Wars 2 features to the TeamSpeak 3 client."
 
+#define DEFAULTCONFIG_LOCATIONTRANSMISSIONTHRESHOLD 3
+#define DEFAULTCONFIG_ONLINESTATETRANSMISSIONTHRESHOLD 15
+
 
 namespace Globals {
 	extern TS3Functions ts3Functions;
 	extern char* pluginID;
+
+	extern int locationTransmissionThreshold;
+	extern int onlineStateTransmissionThreshold;
+
+	void loadConfig();
+
+	std::string getConfigFilePath();
 }

@@ -36,7 +36,7 @@ PLUGINS_EXPORTDLL void ts3plugin_shutdown();
 
 /* Optional functions */
 PLUGINS_EXPORTDLL int ts3plugin_offersConfigure();
-//PLUGINS_EXPORTDLL void ts3plugin_configure(void* handle, void* qParentWidget);
+PLUGINS_EXPORTDLL void ts3plugin_configure(void* handle, void* qParentWidget);
 PLUGINS_EXPORTDLL void ts3plugin_registerPluginID(const char* id);
 //PLUGINS_EXPORTDLL const char* ts3plugin_commandKeyword();
 //PLUGINS_EXPORTDLL int ts3plugin_processCommand(uint64 serverConnectionHandlerID, const char* command);

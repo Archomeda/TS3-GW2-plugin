@@ -32,6 +32,7 @@
 #include "gw2mathutils.h"
 #include "stringutils.h"
 #include "updatechecker.h"
+#include "configdialog.h"
 using namespace std;
 using namespace Globals;
 
@@ -91,6 +92,8 @@ void ts3plugin_setFunctionPointers(const struct TS3Functions funcs) {
 int ts3plugin_init() {
 	/* Your plugin init code here */
 	debuglog("GW2Plugin: init\n");
+
+	Globals::loadConfig();
 
 	threadStopRequested = false;
 	hThread = CreateThread(NULL, 0, mumbleLinkCheckLoop, NULL, 0, NULL);
@@ -182,7 +185,16 @@ int ts3plugin_offersConfigure() {
 	 * PLUGIN_OFFERS_CONFIGURE_NEW_THREAD - Plugin does implement ts3plugin_configure and requests to run this function in an own thread
 	 * PLUGIN_OFFERS_CONFIGURE_QT_THREAD  - Plugin does implement ts3plugin_configure and requests to run this function in the Qt GUI thread
 	 */
-	return PLUGIN_OFFERS_NO_CONFIGURE;  /* In this case ts3plugin_configure does not need to be implemented */
+	return PLUGIN_OFFERS_CONFIGURE_QT_THREAD;  /* In this case ts3plugin_configure does not need to be implemented */
+}
+
+/* Plugin might offer a configuration window. If ts3plugin_offersConfigure returns 0, this function does not need to be implemented. */
+void ts3plugin_configure(void* handle, void* qParentWidget) {
+	debuglog("GW2Plugin: configure\n");
+
+	ConfigDialog qConfigDialog;
+	qConfigDialog.SetupUi();
+	qConfigDialog.exec();
 }
 
 /*
@@ -387,8 +399,8 @@ DWORD WINAPI mumbleLinkCheckLoop(LPVOID lpParam) {
 	Gw2Api::Vector3D prevAvatarPosition;
 
 	while (!threadStopRequested) {
-		// Delay too frequent changes with 5 seconds since last change, otherwise we might spam the server with commands
-		if (difftime(time(NULL), lastMumbleLinkUpdate) < 5) {
+		// Delay too frequent changes with x seconds since last change, otherwise we might spam the server with commands
+		if (difftime(time(NULL), lastMumbleLinkUpdate) < Globals::locationTransmissionThreshold) {
 			Sleep(50);
 			continue;
 		}
@@ -399,13 +411,13 @@ DWORD WINAPI mumbleLinkCheckLoop(LPVOID lpParam) {
 
 		bool updated = false;
 
-		// Check if GW2 is active and wait for 20 seconds otherwise before considering that GW2 is offline (after recently being online)
+		// Check if GW2 is active and wait for x seconds otherwise before considering that GW2 is offline (after recently being online)
 		if (Gw2Api::MumbleLink::isActive() && Gw2Api::MumbleLink::isGW2()) {
 			newIsOnline = true;
 			newIdentity = Gw2Api::MumbleLink::getIdentity();
 			newAvatarPosition = Gw2Api::MumbleLink::getAvatarPosition();
 			lastOffline = 0;
-		} else if (difftime(time(NULL), lastOffline) < 20) {
+		} else if (difftime(time(NULL), lastOffline) < Globals::onlineStateTransmissionThreshold) {
 			Sleep(50);
 			continue;
 		} else if (lastOffline == 0) {
