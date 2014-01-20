@@ -22,7 +22,7 @@ Requirements
 
 Compiling notes
 ---------------
-Compilation of this plugin has been tested in Visual Studio 2010 only. Newer versions should work, but it is not guaranteed that it will. Older versions will most likely not work though.
+Compilation of this plugin has been tested in Visual Studio 2010 with [Qt 4.8.5 and Qt Visual Studio Add-in 1.1.11](https://qt-project.org/downloads) only. It is not guaranteed that newer and/or older versions will work.
 
 Inside the dependencies folder you can find a couple of third party header files: the TeamSpeak 3 Client Plugin SDK and [rapidjson](http://code.google.com/p/rapidjson/).
 
