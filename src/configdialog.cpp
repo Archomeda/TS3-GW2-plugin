@@ -24,6 +24,7 @@ void ConfigDialog::SetupUi() {
 	setupUi(this);
 	QSettings cfg(QString::fromStdString(Globals::getConfigFilePath()), QSettings::IniFormat);
 	spinBox_locationTransmissionThreshold->setValue(cfg.value("locationTransmissionThreshold", DEFAULTCONFIG_LOCATIONTRANSMISSIONTHRESHOLD).toInt());
+	spinBox_distanceTransmissionThreshold->setValue(cfg.value("distanceTransmissionThreshold", DEFAULTCONFIG_DISTANCETRANSMISSIONTHRESHOLD).toInt());
 	spinBox_onlineStateTransmissionThreshold->setValue(cfg.value("onlineStateTransmissionThreshold", DEFAULTCONFIG_ONLINESTATETRANSMISSIONTHRESHOLD).toInt());
 }
 
@@ -33,6 +34,7 @@ void ConfigDialog::accept() {
 
 	QSettings cfg(QString::fromStdString(Globals::getConfigFilePath()), QSettings::IniFormat);
 	cfg.setValue("locationTransmissionThreshold", spinBox_locationTransmissionThreshold->value());
+	cfg.setValue("distanceTransmissionThreshold", spinBox_distanceTransmissionThreshold->value());
 	cfg.setValue("onlineStateTransmissionThreshold", spinBox_onlineStateTransmissionThreshold->value());
 	QDialog::accept();
 }

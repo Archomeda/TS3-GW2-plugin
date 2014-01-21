@@ -39,7 +39,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="tab_general">
     <attribute name="title">
@@ -69,11 +69,11 @@
        <x>10</x>
        <y>10</y>
        <width>351</width>
-       <height>61</height>
+       <height>81</height>
       </rect>
      </property>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="1" column="1">
+      <item row="2" column="1">
        <widget class="QSpinBox" name="spinBox_onlineStateTransmissionThreshold">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -96,7 +96,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
+      <item row="2" column="0">
        <widget class="QLabel" name="label_onlineStateTransmissionThreshold">
         <property name="sizePolicy">
          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
@@ -112,14 +112,7 @@
       <item row="0" column="0">
        <widget class="QLabel" name="label_locationTransmissionThreshold">
         <property name="text">
-         <string>Location transmission threshold</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2">
-       <widget class="QLabel" name="label_onlineStateTransmissionThreshold_2">
-        <property name="text">
-         <string>seconds</string>
+         <string>Location timeout transmission threshold</string>
         </property>
        </widget>
       </item>
@@ -127,6 +120,34 @@
        <widget class="QLabel" name="label_locationTransmissionThreshold_2">
         <property name="text">
          <string>seconds</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="2">
+       <widget class="QLabel" name="label_onlineStateTransmissionThreshold_2">
+        <property name="text">
+         <string>seconds</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_distanceTransmissionThreshold">
+        <property name="text">
+         <string>Location distance transmission threshold</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QLabel" name="label_distanceTransmissionThreshold_2">
+        <property name="text">
+         <string>meters</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QSpinBox" name="spinBox_distanceTransmissionThreshold">
+        <property name="maximum">
+         <number>200</number>
         </property>
        </widget>
       </item>

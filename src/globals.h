@@ -22,6 +22,7 @@
 
 #define DEFAULTCONFIG_LOCATIONTRANSMISSIONTHRESHOLD 3
 #define DEFAULTCONFIG_ONLINESTATETRANSMISSIONTHRESHOLD 15
+#define DEFAULTCONFIG_DISTANCETRANSMISSIONTHRESHOLD 10
 
 
 namespace Globals {
@@ -30,6 +31,7 @@ namespace Globals {
 
 	extern int locationTransmissionThreshold;
 	extern int onlineStateTransmissionThreshold;
+	extern int distanceTransmissionThreshold;
 
 	void loadConfig();
 

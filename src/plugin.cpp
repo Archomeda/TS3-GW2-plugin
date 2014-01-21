@@ -399,6 +399,7 @@ DWORD WINAPI mumbleLinkCheckLoop(LPVOID lpParam) {
 	bool prevIsOnline = false;
 	Gw2Api::MumbleLink::MumbleIdentity prevIdentity;
 	Gw2Api::Vector3D prevAvatarPosition;
+	Gw2Api::Vector2D prevDistancePosition;
 
 	while (!threadStopRequested) {
 		// Check if Guild Wars 2 is active through Mumble Link (it only gets updated when IN-game, so not in character screen, loading screens, etc.)
@@ -487,8 +488,10 @@ DWORD WINAPI mumbleLinkCheckLoop(LPVOID lpParam) {
 					gw2Info.waypointContinentPosition = Gw2Api::Vector2D();
 				}
 
-				if (difftime(time(NULL), lastTransmissionTime) >= Globals::locationTransmissionThreshold) {
-					// Update timeout threshold exceeded -> update
+				if (difftime(time(NULL), lastTransmissionTime) >= Globals::locationTransmissionThreshold &&
+					newAvatarPosition.toVector2D().getDistance(prevDistancePosition) >= Globals::distanceTransmissionThreshold) {
+					// Update timeout and distance threshold exceeded -> update
+					prevDistancePosition = newAvatarPosition.toVector2D();
 					updated = true;
 				}
 			}

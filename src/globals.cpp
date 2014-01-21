@@ -19,11 +19,13 @@ namespace Globals {
 
 	int locationTransmissionThreshold = DEFAULTCONFIG_LOCATIONTRANSMISSIONTHRESHOLD;
 	int onlineStateTransmissionThreshold = DEFAULTCONFIG_ONLINESTATETRANSMISSIONTHRESHOLD;
+	int distanceTransmissionThreshold = DEFAULTCONFIG_DISTANCETRANSMISSIONTHRESHOLD;
 
 	void loadConfig() {
 		QSettings cfg(QString::fromStdString(getConfigFilePath()), QSettings::IniFormat);
 		locationTransmissionThreshold = cfg.value("locationTransmissionThreshold", DEFAULTCONFIG_LOCATIONTRANSMISSIONTHRESHOLD).toInt();
 		onlineStateTransmissionThreshold = cfg.value("onlineStateTransmissionThreshold", DEFAULTCONFIG_ONLINESTATETRANSMISSIONTHRESHOLD).toInt();
+		distanceTransmissionThreshold = cfg.value("distanceTransmissionThreshold", DEFAULTCONFIG_DISTANCETRANSMISSIONTHRESHOLD).toInt();
 	}
 
 	std::string getConfigFilePath() {
