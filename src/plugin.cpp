@@ -392,53 +392,31 @@ DWORD WINAPI mumbleLinkCheckLoop(LPVOID lpParam) {
 	debuglog("GW2Plugin: Mumble Link created\n");
 
 	time_t lastMumbleLinkUpdate = 0;
+	time_t lastTransmissionTime = 0;
 	time_t lastOffline = 0;
 
+	bool linked = false;
 	bool prevIsOnline = false;
 	Gw2Api::MumbleLink::MumbleIdentity prevIdentity;
 	Gw2Api::Vector3D prevAvatarPosition;
 
 	while (!threadStopRequested) {
-		// Delay too frequent changes with x seconds since last change, otherwise we might spam the server with commands
-		if (difftime(time(NULL), lastMumbleLinkUpdate) < Globals::locationTransmissionThreshold) {
-			Sleep(50);
-			continue;
-		}
-
-		bool newIsOnline;
-		Gw2Api::MumbleLink::MumbleIdentity newIdentity;
-		Gw2Api::Vector3D newAvatarPosition;
-
+		// Check if Guild Wars 2 is active through Mumble Link (it only gets updated when IN-game, so not in character screen, loading screens, etc.)
+		bool newIsOnline = Gw2Api::MumbleLink::isActive() && Gw2Api::MumbleLink::isGW2();
 		bool updated = false;
-
-		// Check if GW2 is active and wait for x seconds otherwise before considering that GW2 is offline (after recently being online)
-		if (Gw2Api::MumbleLink::isActive() && Gw2Api::MumbleLink::isGW2()) {
-			newIsOnline = true;
-			newIdentity = Gw2Api::MumbleLink::getIdentity();
-			newAvatarPosition = Gw2Api::MumbleLink::getAvatarPosition();
-			lastOffline = 0;
-		} else if (difftime(time(NULL), lastOffline) < Globals::onlineStateTransmissionThreshold) {
-			Sleep(50);
-			continue;
-		} else if (lastOffline == 0) {
-			lastOffline = time(NULL);
-			Sleep(50);
-			continue;
-		} else {
-			newIsOnline = false;
-		}
-
-		if (newIsOnline != prevIsOnline) {
-			if (newIsOnline) {
-				debuglog("GW2Plugin: Guild Wars 2 linked\n");
-			} else {
-				debuglog("GW2Plugin: Guild Wars 2 unlinked\n");
-			}
-			updated = true;
-		}
-
+		
 		if (newIsOnline) {
+			if (!prevIsOnline && difftime(time(NULL), lastOffline) >= Globals::onlineStateTransmissionThreshold) {
+				debuglog("GW2Plugin: Guild Wars 2 linked\n");
+				linked = true;
+			}
+
+			lastOffline = 0; // Reset last offline time
+			Gw2Api::MumbleLink::MumbleIdentity newIdentity = Gw2Api::MumbleLink::getIdentity();
+			Gw2Api::Vector3D newAvatarPosition = Gw2Api::MumbleLink::getAvatarPosition();
+
 			if (newIdentity != prevIdentity) {
+				// New identity from Mumble Link -> update
 				debuglog("GW2Plugin: New Guild Wars 2 identity\n");
 				gw2Info.characterName = newIdentity.name;
 				gw2Info.profession = newIdentity.profession;
@@ -447,6 +425,10 @@ DWORD WINAPI mumbleLinkCheckLoop(LPVOID lpParam) {
 				gw2Info.teamColorId = newIdentity.team_color_id;
 				gw2Info.commander = newIdentity.commander;
 
+				// Get relevant names of the map, region and continent here, since getting it asynchronously upon receiving a command
+				// and requesting a right panel update seems to crash TS3 with an access violation
+				// TODO: This needs further investigation, because although getting relevant info here is a nice workaround,
+				//       it is not ideal (too much transfer data overhead)
 				Gw2Api::ApiInnerResponseObject<Gw2Api::MapsRootEntry, Gw2Api::MapEntry> map;
 				if (Gw2Api::getMap(gw2Info.mapId, &map)) {
 					gw2Info.mapName = map.value.map_name;
@@ -462,6 +444,7 @@ DWORD WINAPI mumbleLinkCheckLoop(LPVOID lpParam) {
 					gw2Info.continentName = "Unknown continent";
 				}
 
+				// Same comments + TODO as the previous code block: getting the world name here is not ideal
 				Gw2Api::WorldNamesRootEntry worldNames;
 				if (Gw2Api::getWorldNames(&worldNames) && worldNames.world_names.find(gw2Info.worldId) != worldNames.world_names.end()) {
 					gw2Info.worldName = worldNames.world_names[gw2Info.worldId].name;
@@ -469,10 +452,17 @@ DWORD WINAPI mumbleLinkCheckLoop(LPVOID lpParam) {
 					gw2Info.worldName = "World " + to_string(gw2Info.worldId);
 				}
 
-				updated = true;
+				if (difftime(time(NULL), lastTransmissionTime) >= Globals::locationTransmissionThreshold) {
+					// Update timeout threshold exceeded -> update
+					updated = true;
+				}
 			}
+
 			if (newAvatarPosition != prevAvatarPosition) {
+				// New position from Mumble Link -> update
 				debuglog("GW2Plugin: New Guild Wars 2 position\n");
+
+				// Calculate continent position
 				Gw2Api::ApiInnerResponseObject<Gw2Api::MapsRootEntry, Gw2Api::MapEntry> map;
 				if (Gw2Api::getMap(gw2Info.mapId, &map)) {
 					Gw2Api::Gw2Position position = Gw2Api::Gw2Position(newAvatarPosition, Gw2Api::Gw2Position::Mumble,
@@ -480,6 +470,8 @@ DWORD WINAPI mumbleLinkCheckLoop(LPVOID lpParam) {
 					gw2Info.characterContinentPosition = position.position;
 				}
 
+				// Calculate closest waypoint nearby
+				// Same comments + TODO as a couple of code blocks back: getting the waypoint name here is not ideal
 				Gw2Api::PointOfInterestEntry waypoint;
 				if (getClosestWaypoint(gw2Info.characterContinentPosition, gw2Info.mapId, &waypoint)) {
 					gw2Info.waypointId = waypoint.poi_id;
@@ -494,23 +486,37 @@ DWORD WINAPI mumbleLinkCheckLoop(LPVOID lpParam) {
 					gw2Info.waypointName = "";
 					gw2Info.waypointContinentPosition = Gw2Api::Vector2D();
 				}
+
+				if (difftime(time(NULL), lastTransmissionTime) >= Globals::locationTransmissionThreshold) {
+					// Update timeout threshold exceeded -> update
+					updated = true;
+				}
+			}
+
+			prevIdentity = newIdentity;
+			prevAvatarPosition = newAvatarPosition;
+		} else {
+			if (prevIsOnline) {
+				lastOffline = time(NULL); // Remember "offline" time (timeout just to eleminate possible framerate lag, short loading screens, etc.)
+				// TODO: Check whether the Guild Wars 2 process is still active or not in order to get more accurate online/offline information
+			}
+
+			if (linked && difftime(time(NULL), lastOffline) >= Globals::onlineStateTransmissionThreshold) {
+				// Offline threshold exceeded -> update
+				debuglog("GW2Plugin: Guild Wars 2 unlinked\n");
+				linked = false;
+				gw2Info.clear();
 				updated = true;
 			}
-		} else {
-			gw2Info.clear();
 		}
-
 		prevIsOnline = newIsOnline;
-		prevIdentity = newIdentity;
-		prevAvatarPosition = newAvatarPosition;
 
 		if (updated) {
-			debuglog("GW2Plugin: Guild Wars 2 data updated\n");
-			lastMumbleLinkUpdate = time(NULL);
+			lastTransmissionTime = time(NULL);
 			Commands::sendGW2Info(ts3Functions.getCurrentServerConnectionHandlerID(), gw2Info, PluginCommandTarget_SERVER, NULL);
 		}
 
-		Sleep(50);
+		Sleep(50); // Wait a bit so we are not uselessly looping when Guild Wars 2 hasn't updated Mumble Link yet (it updates once per frame)
 	}
 	return 0;
 }
